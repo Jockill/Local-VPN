@@ -105,8 +105,6 @@ struct timeval timer = {1,0};
 
 ## Paquets
 
-* **void** tue_moi(**char*** msg, **int** fdc, ...)
-	* Ferme `fdc` descrpiteurs, affiche `msg` sur `stderr` puis termine le programme.
 
 
 * **paquet** cree_paquet(**char** idFlux, **char** type, **short** numSeq, **short** numAck, **char** ecn, **char** fenetre, **char*** donnees)
@@ -120,3 +118,8 @@ struct timeval timer = {1,0};
 	* **PRE** `fin > debut`
 	* Initialise la structure `fen` par mutation avec les arguments.
 	* **NOTE** `debut` et `fin` sont donnés en nombre de paquets au lieu de nombre d'octets.
+
+## Gestion du processus
+
+* **void** tue_moi(**char*** msg, **int** fdc, ...)
+	* Ferme `fdc` descrpiteurs, affiche `msg` sur `stderr` puis termine le programme.
