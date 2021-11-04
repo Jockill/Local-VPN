@@ -1,3 +1,4 @@
+rm -f *.py
 wget https://git.unistra.fr/alfroy/projet_algo_reseau2021/-/archive/master/projet_algo_reseau2021-master.tar.gz
 tar -xf projet_algo_reseau2021-master.tar.gz
 mv projet_algo_reseau2021-master/medium.py .
