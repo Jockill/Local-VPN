@@ -69,16 +69,27 @@
 ## Variables
 
 ```c
+#define SYN (1<<0)
+#define FIN (1<<1)
+#define RST (2<<2)
+#define ACK (1<<4)
+
 typedef struct paquet
-{
-	char idFlux;
-	char type;
-	short numSeq;
-	short numAck;
-	char ecn;
-	char fenetre;
-	char donnees[44];
+{ //utiliser _uint ? ==> mieux représenter l'intention.
+	unsigned char idFlux;
+	unsigned char type;
+	unsigned short numSeq;
+	unsigned short numAck;
+	unsigned char ecn;
+	unsigned char tailleFenetre; //en nombre d'octets
+	unsigned char donnees[44];
 } paquet;
+
+typedef struct fenetre
+{
+	unsigned int debut;
+	unsigned int fin;
+} fenetre;
 
 struct timeval timer = {1,0};
 ```
@@ -89,13 +100,23 @@ struct timeval timer = {1,0};
 	* **PRE** `addr != NULL`
 	* **PRE** ip doit être une IPv4 valide (*n.n.n.n*) ou NULL
 	* **PRE** `2048 < port < 49151`
-	* Initialise la structure addr avec les arguments.
+	* Initialise la structure `addr` par mutation avec les arguments.
 	* **POST** `addr.sin_addr = INADDR_ANY si ip == NULL`
 
 ## Paquets
 
 * **void** tue_moi(**char*** msg, **int** fdc, ...)
-	* Ferme le programme, `fdc` descrpiteurs et affiche `msg` sur `stderr`.
+	* Ferme `fdc` descrpiteurs, affiche `msg` sur `stderr` puis termine le programme.
+
 
 * **paquet** cree_paquet(**char** idFlux, **char** type, **short** numSeq, **short** numAck, **char** ecn, **char** fenetre, **char*** donnees)
+	* Crée, initialise un paquet et le renvoie.
 	* **RETURN** Le paquet initialisé.
+
+## Fenetre
+
+* **void** modif_taille_fenetre(**fenetre** fen, **unsigned int** debut, **unsigned int** fin)
+	* **PRE** `debut > 0`
+	* **PRE** `fin > debut`
+	* Initialise la structure `fen` par mutation avec les arguments.
+	* **NOTE** `debut` et `fin` sont donnés en nombre de paquets au lieu de nombre d'octets.
