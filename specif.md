@@ -4,17 +4,18 @@
 	* Vérifie la validité des arguments et quitte en affichant un message d'erreur sur `stderr` si ils sont invalides.
 
 
-* **int** negociation_src(**struct sockaddr_in*** serveur, **int** mode, **int*** tailleFenetre)
+* **int** negociation_src(**struct sockaddr_in*** serveur, **int*** mode, **fenetre*** fen)
 	* **PRE** `serveur` initialisé
 	* mode == 1 : stop and wait
 	* mode == 2 : go back n
 	* Négocie l'ouverture d'une communication avec un serveur
-	* Initialise la fenêtre de congestion de la source
-	* **RETURN** -1 en cas d'erreur, valeur du descripteur créé sinon.
+	* Initialise la fenêtre de congestion à partir du serveur
+	* **RETURN** _Undefinded_
 	* **POST** `tailleFenetre == NULL si mode == 1, > 0 sinon`
+	* **NOTE** Termine le programme en cas d'erreur
 
 
-* **int** go_back_n(**struct sockaddr_in*** addrDst, **int** sockSrc, **int** tailleFenetre)
+* **int** go_back_n(**struct sockaddr_in*** addrDst, **int** sockSrc, **fenetre*** tailleFenetre)
 	* **PRE** `addrDst != NULL`
 	* **PRE** `sockSrc >= 0`
 	* Crée et envoie des paquets avec le protocole *go back n* puis termine la communication.
@@ -28,10 +29,10 @@
 	* **POST** `close(sockSrc)`
 
 
-* **int** fin_communication_src(**struct sockaddr_in*** serveur)
+* **void** fin_communication_src(**struct sockaddr_in*** serveur)
 	* **PRE** `serveur` initialisé
 	* Signale une fin de communication à la destination et attend sa réponse.
-	* **RETURN** -1 en cas d'erreur, 0 sinon
+	* **NOTE** Termine le programme en cas d'erreur
 ---
 # DESTINATION (*serveur*)
 
@@ -42,27 +43,28 @@
 * **int** negociation_dst(**struct sockaddr_in*** client, **fenetre*** fenetre, **int*** mode)
 	* **PRE** `client` initialisé
 	* Négocie l'ouverture d'une communication avec un client.
-	* Initialise la fenêtre de congestion du client à la même taille.
-	* **RETURN** -1 en cas d'erreur, valeur du descripteur créé sinon.
+	* Initialise la fenêtre de congestion du client avec les memes proprietes que `fenetre`
+	* **RETURN** _Undefinded_
 	* **NOTE** Si `*tailleFenetre == 0` alors le mode de communication sera en stop and wait.
+	* **NOTE** Termine le programme en cas d'erreur
 
 
-* **int** stop_and_wait_ecoute(**struct sockaddr_in*** client)
+* **void** stop_and_wait_ecoute(**struct sockaddr_in*** client)
 	* **PRE** `client` initialisé
 	* Gère la réception des paquets et l'envoi d'acquittements en mode *stop and wait*
-	* **RETURN** -1 en cas d'erreur, 0 sinon
+	* **NOTE** Termine le programme en cas d'erreur
 
 
-* **int** go_back_n_ecoute(**struct sockaddr_in*** client, **int** tailleFenetre)
+* **void** go_back_n_ecoute(**struct sockaddr_in*** client, **int** tailleFenetre)
 	* **PRE** `client` initialisé
 	* Gère la réception des paquets et l'envoi d'acquittements en mode *go back n*
-	* **RETURN** -1 en cas d'erreur, 0 sinon
+	* **NOTE** Termine le programme en cas d'erreur
 
 
-* **int** fin_communication_dst(**struct sockaddr_in*** client)
+* **void** fin_communication_dst(**struct sockaddr_in*** client)
 	* **PRE** `client` initialisé
 	* Signale une fin de communication à la source.
-	* **RETURN** -1 en cas d'erreur, 0 sinon
+	* **NOTE** Termine le programme en cas d'erreur
 ---
 # UTILS
 
@@ -122,8 +124,9 @@ typedef struct fenetre
 	* Initialise la structure `fen` par mutation avec les arguments.
 	* **NOTE** `debut` et `fin` sont donnés en nombre de paquets au lieu de nombre d'octets.
 
+
 * **int** taille_fenetre(**fenetre*** fen)
-	**RETURN** La taille de `fen`
+	* **RETURN** La taille de `fen`
 
 ## Gestion du processus
 
