@@ -107,7 +107,7 @@ struct timeval timer = {1,0};
 
 
 
-* **paquet** cree_paquet(**char** idFlux, **char** type, **short** numSeq, **short** numAck, **char** ecn, **char** fenetre, **char*** donnees)
+* **paquet** cree_paquet(**char** idFlux, **char** type, **short** numSeq, **short** numAck, **char** ecn, **char** tailleFenetre, **char*** donnees)
 	* Crée, initialise un paquet et le renvoie.
 	* **RETURN** Le paquet initialisé.
 
