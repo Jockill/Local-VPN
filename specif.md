@@ -44,7 +44,7 @@
 	* Négocie l'ouverture d'une communication avec un client.
 	* Initialise la fenêtre de congestion du client à la même taille.
 	* **RETURN** -1 en cas d'erreur, valeur du descripteur créé sinon.
-	* **NOTE** Si `*tailleFenetre < 0` alors le mode de communication sera en stop and wait.
+	* **NOTE** Si `*tailleFenetre == 0` alors le mode de communication sera en stop and wait.
 
 
 * **int** stop_and_wait_ecoute(**struct sockaddr_in*** client)
@@ -71,8 +71,12 @@
 ```c
 #define SYN (1<<0)
 #define FIN (1<<1)
-#define RST (2<<2)
+#define RST (1<<2)
 #define ACK (1<<4)
+
+#define STOP_N_WAIT 1
+#define GO_BACK_N 2
+
 #define TAILLE_PAQUET 52
 
 typedef struct paquet
@@ -91,8 +95,6 @@ typedef struct fenetre
 	unsigned int debut;
 	unsigned int fin;
 } fenetre;
-
-struct timeval timer = {1,0};
 ```
 
 ## Adresses
@@ -108,13 +110,13 @@ struct timeval timer = {1,0};
 
 
 
-* **paquet** cree_paquet(**char** idFlux, **char** type, **short** numSeq, **short** numAck, **char** ecn, **char** tailleFenetre, **char*** donnees)
+* **paquet** cree_paquet(**unsigned char** idFlux, **unsigned char** type, **unsigned short** numSeq, **unsigned short** numAck, **unsigned char** ecn, **unsigned char** tailleFenetre, **unsigned char*** donnees)
 	* Crée, initialise un paquet et le renvoie.
 	* **RETURN** Le paquet initialisé.
 
 ## Fenetre
 
-* **void** modif_taille_fenetre(**fenetre** fen, **unsigned int** debut, **unsigned int** fin)
+* **void** modif_taille_fenetre(**fenetre*** fen, **unsigned int** debut, **unsigned int** fin)
 	* **PRE** `debut > 0`
 	* **PRE** `fin > debut`
 	* Initialise la structure `fen` par mutation avec les arguments.
