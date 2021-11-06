@@ -11,6 +11,12 @@
 #define RST (1<<2)
 #define ACK (1<<4)
 
+#define STOP_N_WAIT 1
+#define GO_BACK_N 2
+
+#define TAILLE_PAQUET 52
+
+
 typedef struct paquet
 { //utiliser _uint ? ==> mieux représenter l'intention.
     unsigned char idFlux;
@@ -47,7 +53,7 @@ void tue_moi(char* msg, int fdc, ...)
 
 void init_addr(struct sockaddr_in* addr, char* ip, char* port)
 {
-	//Gestion des preconditions
+	//Preconditions
 	//addr
 	if (addr == NULL)
 		tue_moi("init_addr: addr == NULL.", 0);
@@ -55,18 +61,20 @@ void init_addr(struct sockaddr_in* addr, char* ip, char* port)
 	in_addr_t ipNetwork;
 	int tmp;
 	if (ip != NULL)
-		tmp = inet_pton(AF_INET, ip, &addr);
+		tmp = inet_pton(AF_INET, ip, &ipNetwork);
 	else
-		tmp = inet_pton(AF_INET, INADDR_ANY, &addr);
+		tmp = inet_pton(AF_INET, INADDR_ANY, &ipNetwork);
 	if (tmp == 0)
 		tue_moi("init_addr: ip ne correspond pas à une adresse IPv4 valide.", 0);
 	if (tmp == -1)
 		tue_moi("init_addr: mauvaise address family", 0);
 	//port
-	if (port < 2048 || port > 49151)
+	if (2048 > *port || *port > 49151)
 		tue_moi("init_addr: port n'est pas dans le bon intervalle.", 0);
 
-	return;
+        addr->sin_family = AF_INET;
+        addr->sin_addr.s_addr = ipNetwork;
+        addr->sin_port = htons((int)*port);
 }
 
 int ipv4_valide(char* ip){
@@ -111,3 +119,61 @@ int ipv4_valide(char* ip){
 /******************************************************************************/
 /********************************** PAQUETS ***********************************/
 /******************************************************************************/
+
+paquet cree_paquet(unsigned char idFlux, unsigned char type,
+                  unsigned short numSeq, unsigned short numAck,
+                  unsigned char ecn, unsigned char tailleFenetre,
+                  unsigned char* donnees)
+{
+        paquet paquet;
+        paquet->idFlux = idFlux;
+        paquet->type = type;
+        paquet->numSeq = numSeq;
+        paquet->numAck = numAck;
+        paquet->ecn = ecn;
+        paquet->tailleFenetre = tailleFenetre;
+        if (sizeof(donnees) > 44)
+                fprintf(stderr, "Attention, les donnees ont ete tronquees.\n");
+        paquet->donnees = donnees;
+
+        return paquet;
+}
+
+
+/******************************************************************************/
+/*********************************** FENETRE **********************************/
+/******************************************************************************/
+
+void modif_taille_fenetre(fenetre* fen, unsigned int debut, unsigned int fin)
+{
+        //Preconditions
+        //Fenetre
+        if (fen == NULL)
+        {
+                fprintf(stderr, "modif_taille_fenetre: fen NULL.\n");
+                exit(1);
+        }
+        //Debut
+        if (debut < 0)
+        {
+                fprintf(stderr, "modif_taille_fenetre: debut doit etre positif.\n");
+                exit(1);
+        }
+        //Fin
+        if (fin < debut)
+        {
+                fprintf(stderr, "modif_taille_fenetre: fin doit etre plus grand que debut.\n");
+                exit(1);
+        }
+
+        fen->debut = debut;
+        fen->fin = fin;
+}
+
+int taille_fenetre(fenetre* fen)
+{
+        if (fen == NULL)
+                return 0;
+        else
+                return (fen->fin - fen->debut);
+}
