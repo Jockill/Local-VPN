@@ -73,6 +73,7 @@
 #define FIN (1<<1)
 #define RST (2<<2)
 #define ACK (1<<4)
+#define TAILLE_PAQUET 52
 
 typedef struct paquet
 { //utiliser _uint ? ==> mieux représenter l'intention.
@@ -107,7 +108,7 @@ struct timeval timer = {1,0};
 
 
 
-* **paquet** cree_paquet(**char** idFlux, **char** type, **short** numSeq, **short** numAck, **char** ecn, **char** fenetre, **char*** donnees)
+* **paquet** cree_paquet(**char** idFlux, **char** type, **short** numSeq, **short** numAck, **char** ecn, **char** tailleFenetre, **char*** donnees)
 	* Crée, initialise un paquet et le renvoie.
 	* **RETURN** Le paquet initialisé.
 
