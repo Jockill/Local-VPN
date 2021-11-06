@@ -39,7 +39,7 @@
 	* Vérifie la validité des arguments et quitte en affichant un message d'erreur sur `stderr` si ils sont invalides.
 
 
-* **int** negociation_dst(**struct sockaddr_in*** client, **int*** tailleFenetre)
+* **int** negociation_dst(**struct sockaddr_in*** client, **fenetre*** fenetre)
 	* **PRE** `client` initialisé
 	* Négocie l'ouverture d'une communication avec un client.
 	* Initialise la fenêtre de congestion du client à la même taille.
