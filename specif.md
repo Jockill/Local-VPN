@@ -15,7 +15,7 @@
 	* **NOTE** Termine le programme en cas d'erreur
 
 
-* **int** go_back_n(**struct sockaddr_in*** addrDst, **int** sockSrc, **fenetre*** tailleFenetre)
+* **int** go_back_n(**struct sockaddr_in*** addrDst, **int** sockSrc, **fenetre*** fen)
 	* **PRE** `addrDst != NULL`
 	* **PRE** `sockSrc >= 0`
 	* Crée et envoie des paquets avec le protocole *go back n* puis termine la communication.
