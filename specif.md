@@ -120,6 +120,9 @@ struct timeval timer = {1,0};
 	* Initialise la structure `fen` par mutation avec les arguments.
 	* **NOTE** `debut` et `fin` sont donnés en nombre de paquets au lieu de nombre d'octets.
 
+* **int** taille_fenetre(**fenetre*** fen)
+	**RETURN** La taille de `fen`
+
 ## Gestion du processus
 
 * **void** tue_moi(**char*** msg, **int** fdc, ...)
