@@ -112,7 +112,11 @@ typedef struct fenetre
 
 
 
+<<<<<<< HEAD
 * **paquet** cree_paquet(**unsigned char** idFlux, **unsigned char** type, **unsigned short** numSeq, **unsigned short** numAck, **unsigned char** ecn, **unsigned char** tailleFenetre, **unsigned char*** donnees)
+=======
+* **paquet** cree_paquet(**char** idFlux, **char** type, **short** numSeq, **short** numAck, **char** ecn, **char** tailleFenetre, **char*** donnees)
+>>>>>>> server
 	* Crée, initialise un paquet et le renvoie.
 	* **RETURN** Le paquet initialisé.
 
