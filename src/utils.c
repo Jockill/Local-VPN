@@ -15,6 +15,8 @@
 #define GO_BACK_N 2
 
 #define TAILLE_PAQUET 52
+#define TAILLE_DONNEES 44
+#define TAILLE_FENETRE_SERVEUR 5
 
 
 typedef struct paquet
@@ -25,16 +27,20 @@ typedef struct paquet
     unsigned short numAck;
     unsigned char ecn;
     unsigned char tailleFenetre; //en nombre d'octets
-    unsigned char donnees[44];
+    unsigned char donnees[TAILLE_DONNEES];
 } paquet;
 
 typedef struct fenetre
 {
     unsigned int debut;
     unsigned int fin;
+    //Taille de la fenetre d'envoi en nombre de paquets, identique a la taille
+    //de la fenetre de reception
+    unsigned char tailleEnvoi;
+    //Taille de la fenetre de congestion en nombre de paquets
+    unsigned char tailleCongestion;
 } fenetre;
 
-struct timeval timer = {1,0};
 
 void tue_moi(char* msg, int fdc, ...)
 {
