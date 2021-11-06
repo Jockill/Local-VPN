@@ -25,7 +25,7 @@ void check_args_src(int argc, char** argv){
         exit(1);
     }
     for(int i = 3; i<=4;i++){
-        int testPort = strtol(argv[1],NULL,0);
+        int testPort = strtol(argv[i],NULL,0);
         if(testPort <2049 || testPort> 49151){
             fprintf(stderr,"Erreur : numéro de port non valide.\n");
             fprintf(stderr,"Rappel port : 2048 < port < 49151.\n");

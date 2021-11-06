@@ -9,27 +9,41 @@
 
 void check_args_dst(int argc, char** argv)
 {
-        if (argc != 4)
-        {
-                fprintf(stderr, "Usage: %s <IP_distante> <port_local> <port_medium>\n", argv[0]);
-                exit(1);
+    if(argc < 3){
+        fprintf(stderr,"Erreur : Argument manquant.\n");
+        fprintf(stderr,"Syntaxe attendu : ./destination <IP_distante> <port_local> <port_ecoute_dst_pertubateur>\n");
+        exit(1);
+    } else if(argc > 3){
+        fprintf(stderr,"Erreur : Trop d'argument.\n");
+        fprintf(stderr,"Syntaxe attendu : ./destination <IP_distante> <port_local> <port_ecoute_dst_pertubateur>\n");
+        exit(1);
+    }
+    if(!ipv4_valide(argv[1])){
+        fprintf(stderr,"Erreur : IP non valide.\n");
+        fprintf(stderr,"Rappel Format IPV4 : xxx.xxx.xxx.xxx .\n");
+        exit(1);
+    }
+    for(int i = 2; i<=3;i++){
+        int testPort = strtol(argv[i],NULL,0);
+        if(testPort <2049 || testPort> 49151){
+            fprintf(stderr,"Erreur : numéro de port non valide.\n");
+            fprintf(stderr,"Rappel port : 2048 < port < 49151.\n");
+            exit(1);
         }
+    }
+    return;
+}
 
-        if (ipv4_valide(argv[1]) == 0)
-        {
-                fprintf(stderr, "L'adresse IP donnée n'est pas une adresse IPv4 valide.\n");
-                exit(1);
-        }
-        if (2048 > port || port > 49151)
-        {
-                fprintf(stderr, "Le port local doit etre compris entre 2048 et 49151 exclus\n");
-                exit(1);
-        }
-        if (2048 > port || port > 49151)
-        {
-                fprintf(stderr, "Le port du medium doit etre compris entre 2048 et 49151 exclus\n");
-                exit(1);
-        }
+void check_args_src(int argc, char** argv){
+
+
+
+    int mode = strtol(argv[1],NULL,0);
+    if(mode != STOP_N_WAIT && mode != GO_BACK_N){
+        fprintf(stderr,"Erreur : mode non valide.\n");
+        fprintf(stderr,"Rappel mode : 1=\'stop and wait\', 2=\'go back n\'.\n");
+        exit(1);
+    }
 
 }
 
