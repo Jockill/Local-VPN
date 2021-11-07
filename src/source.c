@@ -1,14 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <time.h>
+
 #include "utils.c"
 
 void check_args_src(int argc, char** argv){
+    printf("%d\n",argc);
 
-    if(argc < 4){
+    if(argc < 5){
         fprintf(stderr,"Erreur : Argument manquant.\n");
         fprintf(stderr,"Syntaxe attendu : ./source <mode> <IP_distante> <port_local> <port_ecoute_src_pertubateur>\n");
         exit(1);
-    } else if(argc > 4){
+    } else if(argc > 5){
         fprintf(stderr,"Erreur : Trop d'argument.\n");
         fprintf(stderr,"Syntaxe attendu : ./source <mode> <IP_distante> <port_local> <port_ecoute_src_pertubateur>\n");
         exit(1);
@@ -35,18 +45,18 @@ void check_args_src(int argc, char** argv){
     return;
 }
 
-int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,struct sockaddr_in* client, int mode, fenetre* fen){
+int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur, int mode, fenetre* fen){
     short numA =(short) rand();
     short numB;
     ssize_t tmp;
+    socklen_t tailleServ = sizeof(*serveur);
 
-    if(mode != GO_BACK_N || mode != STOP_N_WAIT){
+    if(mode != GO_BACK_N && mode != STOP_N_WAIT){
         fprintf(stderr,"mode incorrecte\n");
         close(sockClient);
         close(sockServeur);
         exit(1);
     }
-
     paquet premierHandShake = cree_paquet(0,SYN,numA,0,0,mode-1,NULL);
     //On donne le mode de la communication en utilisisant habilement le champ taille fenetre
     //Si la taille de la fenetre est a 0 quand le client ouvre la connection alors
@@ -57,7 +67,7 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
     while(!ack1Recu){
 
         if((tmp = sendto(sockServeur,(void*)&premierHandShake,
-            52,0,(struct sockaddr*)serveur,sizeof(*serveur)) == -1)){
+            52,0,(struct sockaddr*)serveur,tailleServ) == -1)){
             tue_moi("sendto",2,sockServeur,sockClient);
         }
         if(tmp !=52) continue; //si on a pas reussi a toute envoyer on renvoie
@@ -71,7 +81,7 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
         }
 
         if(FD_ISSET(sockClient,&acquittement)){
-            if((tmp = recv(sockClient,(void *)&ack,52,0))==-1){
+            if((tmp = recvfrom(sockClient,(void *)&ack,52,0,(struct sockaddr*)serveur,&tailleServ))==-1){
                 tue_moi("sendto",2,sockServeur,sockClient);
             }
             if(tmp != 52) continue; //si on a pas reussi a tout recevoir
@@ -84,7 +94,7 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
     }
     paquet dernierHandShake = cree_paquet(0,ACK,numA+1,numB+1,0,0,NULL);
     if((tmp = sendto(sockServeur,(void*)&dernierHandShake,
-            52,0,(struct sockaddr*)serveur,sizeof(*serveur)) == -1)){
+            52,0,(struct sockaddr*)serveur,tailleServ) == -1)){
             tue_moi("sendto",2,sockServeur,sockClient);
     }
     if(tmp !=52){
@@ -99,18 +109,16 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
 
 int main(int argc, char** argv){
 
-    int mode;
+    check_args_src(argc,argv);
+
+    int mode = strtol(argv[1],NULL,0);
     fenetre fen;
     fen.debut = fen.fin = 0;
-
-
     struct sockaddr_in serveur, client;
     
     srand(time(NULL));
-    check_args_src(argc,argv);
     init_addr(&serveur,argv[2],argv[4]);
     init_addr(&client,NULL,argv[3]);
-
     int sockServeur = socket(PF_INET,SOCK_DGRAM,0); // socket avec laquelle j'envoie
     if(sockServeur == -1){
         tue_moi("socket",0);
@@ -122,5 +130,6 @@ int main(int argc, char** argv){
     if(bind(sockClient,(struct sockaddr*)&client,sizeof(client))==-1){
         tue_moi("bind",0);
     }
+    negociation_src(sockServeur,sockClient,&serveur,mode,&fen);
 
 }

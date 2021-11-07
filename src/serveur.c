@@ -9,11 +9,11 @@
 
 void check_args_dst(int argc, char** argv)
 {
-    if(argc < 3){
+    if(argc < 4){
         fprintf(stderr,"Erreur : Argument manquant.\n");
         fprintf(stderr,"Syntaxe attendu : ./destination <IP_distante> <port_local> <port_ecoute_dst_pertubateur>\n");
         exit(1);
-    } else if(argc > 3){
+    } else if(argc > 4){
         fprintf(stderr,"Erreur : Trop d'argument.\n");
         fprintf(stderr,"Syntaxe attendu : ./destination <IP_distante> <port_local> <port_ecoute_dst_pertubateur>\n");
         exit(1);
@@ -52,7 +52,7 @@ void check_args_dst(int argc, char** argv)
 //Pour pouvoir gérer le multiflux, il faudra utiliser FD_SET et jouer avec les
 //fd pour savoir quel flux est pret.
 int negociation_dst(int* sockServer, int* sockClient,
-                    struct sockaddr_in* addrClient, fenetre* fenetre, int* mode)
+                    struct sockaddr_in* addrClient, fenetre* fen, int* mode)
 {
         //Preconditions
         if (sockClient < 0)
@@ -168,9 +168,9 @@ int main(int argc, char** argc)
         }        
         int mode = 0;
         //Fenetre
-        fenetre fenetre = {0,0,1,0};
+        fenetre fen = {0,0,1,0};
 
 
-        negociation_dst(&sockServer, &sockClient, &addrClient, &fenetre, &mode);
+        negociation_dst(sockServeur, sockClient, &addrClient, &fen, &mode);
         return 0;
 }
