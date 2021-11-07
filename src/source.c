@@ -93,7 +93,7 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
     }
     paquet dernierHandShake = cree_paquet(0,ACK,numA+1,numB+1,0,0,NULL);
     if((tmp = sendto(sockServeur,(void*)&dernierHandShake,
-            52,0,(struct sockaddr*)serveur,tailleServ) == -1)){
+            52,0,(struct sockaddr*)serveur,tailleServ)) == -1){
             tue_moi("sendto",2,sockServeur,sockClient);
     }
     if(tmp !=52){
