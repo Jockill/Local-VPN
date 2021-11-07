@@ -27,3 +27,6 @@ medium:
 	else \
 		echo "Vous n'avez pas les permissions pour executer getMedium.sh"; \
 	fi
+
+clean:
+	rm -rf doc/* obj/* destination "source" medium.py
