@@ -65,13 +65,11 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
     fd_set acquittement;
     int ack1Recu = 0;
     while(!ack1Recu){
-
-        if((tmp = sendto(sockServeur,(void*)&premierHandShake,
-            52,0,(struct sockaddr*)serveur,tailleServ) == -1)){
+        if((tmp = sendto(sockServeur,(void *)&premierHandShake,
+            sizeof(premierHandShake),0,(struct sockaddr*)serveur,tailleServ)) == -1){
             tue_moi("sendto",2,sockServeur,sockClient);
         }
         if(tmp !=52) continue; //si on a pas reussi a toute envoyer on renvoie
-
         FD_ZERO(&acquittement);
         FD_SET(sockClient,&acquittement);
         struct timeval timer = {1,0};
@@ -90,6 +88,7 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
             numB = ack.numSeq;
             fen->tailleEnvoi= ack.tailleFenetre;
             ack1Recu=1;
+            printf("j'ai reçu l'aquitement\n");
         }
     }
     paquet dernierHandShake = cree_paquet(0,ACK,numA+1,numB+1,0,0,NULL);
