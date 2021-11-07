@@ -101,7 +101,6 @@ paquet cree_paquet(unsigned char idFlux, unsigned char type,
         }else{
                 paquet.donnees[0]='\0';
         }
-        printf("test\n");
         return paquet;
 }
 
@@ -121,7 +120,7 @@ void affiche_paquet(paquet* paquet)
 	printf("\n");
 	printf("Numero de sequence: %d\n", paquet->numSeq);
 	printf("Numero d'acquittement: %d\n", paquet->numAck);
-	printf("ECN: \n", paquet->ecn);
+	printf("ECN:%d \n", paquet->ecn);
 	printf("Taille fenetre: %d\n", paquet->tailleFenetre);
 	printf("Donnees:\n%s\n", paquet->donnees);
 	printf("=======================================\n");
