@@ -129,16 +129,16 @@ paquet cree_paquet(unsigned char idFlux, unsigned char type,
                   unsigned char* donnees)
 {
         paquet paquet;
-        paquet->idFlux = idFlux;
-        paquet->type = type;
-        paquet->numSeq = numSeq;
-        paquet->numAck = numAck;
-        paquet->ecn = ecn;
-        paquet->tailleFenetre = tailleFenetre;
-        if (sizeof(donnees) > 44)
+        paquet.idFlux = idFlux;
+        paquet.type = type;
+        paquet.numSeq = numSeq;
+        paquet.numAck = numAck;
+        paquet.ecn = ecn;
+        paquet.tailleFenetre = tailleFenetre;
+        if (strlen(donnees) > 44)
                 fprintf(stderr, "Attention, les donnees ont ete tronquees.\n");
-        paquet->donnees = donnees;
-
+        strncpy(paquet.donnees,donnees,44); // attention si le 44ième octets n'est pas un '\0' alors le string
+                                            // ne terminera pas par le char sentinel
         return paquet;
 }
 
