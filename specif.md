@@ -108,6 +108,10 @@ typedef struct fenetre
 	* Initialise la structure `addr` par mutation avec les arguments.
 	* **POST** `addr.sin_addr = INADDR_ANY si ip == NULL`
 
+* **int** ipv4_valide(**char*** ip)
+	* Vérifie si `ip` est une IPv4 valide
+	* **RETURN** 1 en cas de réussite, 0 sinon
+
 ## Paquets
 
 
