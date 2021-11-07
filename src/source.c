@@ -113,11 +113,10 @@ int main(int argc, char** argv){
 
     int sockServeur = socket(PF_INET,SOCK_DGRAM,0); // socket avec laquelle j'envoie
     if(sockServeur == -1){
-        perror("socket");
-        exit(1);
+        tue_moi("socket",0);
     }
     int sockClient = socket(PF_INET,SOCK_DGRAM,0); // socket avec laquelle je reçoit
-    if(sockServeur == -1){
+    if(sockClient == -1){
         tue_moi("socket",1,sockClient);
     }
     if(bind(sockClient,(struct sockaddr*)&client,sizeof(client))==-1){

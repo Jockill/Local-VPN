@@ -133,18 +133,19 @@ int main(int argc, char** argc)
         init_addr(&addrServeur, NULL, argv[3]);
         init_addr(&addrClient, argv[2], argv[4]);
         //Sockets
+        int sockClient = socket(PF_INET, SOCK_DGRAM, 0);
+        if(sockClient == -1){
+                tue_moi("socket",0);
+        }
         int sockServeur = socket(PF_INET, SOCK_DGRAM, 0);
+        if(sockServeur == -1){
+                tue_moi("socket",1,sockClient);
+        }
         if (bind(sockServeur, (struct sockaddr*)&addrServeur,
                  sizeof(addrServeur)) == -1)
         {
-                tue_moi("main, bind serveur", 1, sockServer);
-        }
-        int sockClient = socket(PF_INET, SOCK_DGRAM, 0);
-        if (bind(sockClient, (struct sockaddr*)&addrClient,
-                 sizeof(addrClient)) == -1)
-        {
-                tue_moi("main, bind client", 2, sockServer, sockClient);
-        }
+                tue_moi("main, bind serveur", 2,sockClient, sockServer);
+        }        
         int mode = 0;
         //Fenetre
         fenetre fenetre = {0,0,1,0};
