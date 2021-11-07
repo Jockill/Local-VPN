@@ -16,7 +16,8 @@ source: source.c utils.o
 serveur: serveur.c utils.o
 	gcc $^ $(FLAGS) -o "serveur"
 
-utils.o: utils.c utils.h
+obj/utils.o: utils.c utils.h
+	mkdir -p obj/
 	gcc $(FLAGS) -c $< -o $@
 
 
