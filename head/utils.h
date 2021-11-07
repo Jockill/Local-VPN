@@ -1,3 +1,20 @@
+#ifndef __UTILS_H__
+#define __UTILS_H__
+
+
+#define SYN (1<<0)
+#define FIN (1<<1)
+#define RST (1<<2)
+#define ACK (1<<4)
+
+#define STOP_N_WAIT 1
+#define GO_BACK_N 2
+
+#define TAILLE_PAQUET 52
+#define TAILLE_DONNEES 44
+#define TAILLE_FENETRE_SERVEUR 5
+
+
 typedef struct paquet
 { //utiliser _uint ? ==> mieux représenter l'intention.
     unsigned char idFlux;
@@ -6,7 +23,7 @@ typedef struct paquet
     unsigned short numAck;
     unsigned char ecn;
     unsigned char tailleFenetre; //en nombre d'octets
-    unsigned char donnees[TAILLE_DONNEES];
+    char donnees[TAILLE_DONNEES];
 } paquet;
 
 typedef struct fenetre
@@ -19,6 +36,7 @@ typedef struct fenetre
     //Taille de la fenetre de congestion en nombre de paquets
     unsigned char tailleCongestion;
 } fenetre;
+
 
 
 /*!
@@ -78,3 +96,5 @@ paquet cree_paquet(unsigned char idFlux, unsigned char type,
 /******************************************************************************/
 void modif_taille_fenetre(fenetre* fen, unsigned int debut, unsigned int fin);
 int taille_fenetre(fenetre* fen);
+
+#endif
