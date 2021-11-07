@@ -8,13 +8,13 @@ vpath %.h head/
 vpath %.c src/
 vpath %.o obj/
 
-main: source serveur
+main: source destination
 
 source: source.c utils.o
 	gcc $^ $(FLAGS) -o "source"
 
-serveur: serveur.c utils.o
-	gcc $^ $(FLAGS) -o "serveur"
+destination: destination.c utils.o
+	gcc $^ $(FLAGS) -o "destination"
 
 obj/utils.o: utils.c utils.h
 	mkdir -p obj/

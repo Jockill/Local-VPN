@@ -65,23 +65,21 @@ int negociation_dst(int* sockServer, int* sockClient,
                 fprintf(stderr, "negociation_dst: sockServer < 0.\n");
                 exit(1);
         }
-        if (client == NULL)
+        if (addrClient == NULL)
                 tue_moi("negociation_dst: client NULL", 2, sockClient,
                         sockServer);
-
-
-        paquet paquet = {0};
+        short randAck =(short) rand();
+        paquet paquetEnv = {0};
+        paquet paquetRecv= {0};
         ssize_t tmp = 0;
         socklen_t lenAddrClient = sizeof(&addrClient);
         unsigned char type = 0;
-        // fd_set sockSet;
-        // FD_ZERO(&sockSet);
-        // FD_SET(sockServer, &sockSet);
+        fd_set sockSet;
 
         //reception SYN
-        while ((paquet.type != SYN) && (tmp != 52))
+        while ((paquetRecv.type != SYN) && (tmp != 52))
         {
-                tmp = recvfrom(sockClient, (void*)&paquet, TAILLE_PAQUET, NULL,
+                tmp = recvfrom(sockServer, (void*)&paquetRecv, TAILLE_PAQUET, NULL,
                                   (struct sockaddr*)addrClient, lenAddrClient);
                 if (tmp == -1)
                         tue_moi("negociation_dst, recvfrom", 2,
@@ -89,36 +87,35 @@ int negociation_dst(int* sockServer, int* sockClient,
         }
 
         //Configuration du mode
-        if (paquet.tailleFenetre == 0)
+        if (paquetRecv.tailleFenetre == 0)
                 *mode = STOP_N_WAIT;
         else
                 *mode = GO_BACK_N;
 
         //envoi SYN-ACK
-        paquet = cree_paquet(paquet.idFlux, SYN+ACK, (short)rand(),
-                             paquet.numSeq+1, 0, TAILLE_FENETRE_SERVEUR, NULL);
-        tmp = 0;
-        while((paquet.type != ACK) && (tmp != 52))
+        paquetEnv = cree_paquet(paquetRecv.idFlux, SYN+ACK, randAck,
+                             paquetRecv.numSeq+1, 0, TAILLE_FENETRE_SERVEUR, NULL);
+        tmp = 0; // on reinitialise tmp
+        while((paquetRecv.type != ACK) && (tmp != 52) && (paquetRecv.numAck != randAck+1))
         {
-                tmp = sendto(sockClient, (void*)&paquet, TAILLE_PAQUET, NULL,
+                tmp = sendto(sockClient, (void*)&paquetEnv, TAILLE_PAQUET, NULL,
                             (struct sockaddr*)addrClient, lenAddrClient);
                 if (tmp == -1)
                         tue_moi("negociation_dst, sendto", 2,
-                                sockServer, sockClient);
+                                sockServer, sockClient); 
+                //Reception ACK               
+                FD_ZERO(&sockSet);
+                FD_SET(*sockServer, &sockSet);
+                struct timeval timer = {1,0};
+                if(select(FD_SETSIZE,&sockSet,NULL,NULL,&timer) ==-1)
+                        tue_moi("sendto",2,sockServer,sockClient);
+                
+                if(FD_ISSET(*sockServer,&sockSet)){
+                        if((tmp = recvfrom(sockClient,(void *)&paquetRecv,52,0,
+                                          (struct sockaddr*)addrClient,&lenAddrClient))==-1)
+                                tue_moi("sendto",2,sockServer,sockClient);
+                }
         }
-
-        //Reception ACK
-        tmp = 0;
-        paquet = cree_paquet(0,0,0,0,0,0,NULL);
-        while((paquet.type != ACK) && (tp != 52))
-        {
-                tmp = recvfrom(sockClient, (void*)&paquet, TAILLE_PAQUET, NULL,
-                              (struct sockaddr*)addrClient, lenAddrClient);
-                if (tmp == -1)
-                        tue_moi("negociation_dst, recvfrom", 2,
-                                sockClient, sockServer);
-        }
-
         return 0;
 }
 
