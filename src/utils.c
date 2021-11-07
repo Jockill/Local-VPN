@@ -66,21 +66,18 @@ void init_addr(struct sockaddr_in* addr, char* ip, char* port)
 	//ip
 	in_addr_t ipNetwork;
 	int tmp;
-	if (ip != NULL)
-		tmp = inet_pton(AF_INET, ip, &ipNetwork);
-	else
-		tmp = inet_pton(AF_INET, INADDR_ANY, &ipNetwork);
-	if (tmp == 0)
-		tue_moi("init_addr: ip ne correspond pas à une adresse IPv4 valide.", 0);
-	if (tmp == -1)
-		tue_moi("init_addr: mauvaise address family", 0);
-	//port
-	if (2048 > *port || *port > 49151)
+	if (ip != NULL) tmp = inet_pton(AF_INET, ip, &ipNetwork);
+	else tmp = inet_pton(AF_INET, INADDR_ANY, &ipNetwork);
+        if (tmp == 0) tue_moi("init_addr: ip ne correspond pas à une adresse IPv4 valide.", 0);
+	
+        //port
+        uint16_t port_reel = (uint16_t) strtol(port,NULL,0);
+	if (2048 > port_reel || port_reel > 49151)
 		tue_moi("init_addr: port n'est pas dans le bon intervalle.", 0);
 
         addr->sin_family = AF_INET;
         addr->sin_addr.s_addr = ipNetwork;
-        addr->sin_port = htons((int)*port);
+        addr->sin_port = htons(port_reel);
 }
 
 int ipv4_valide(char* ip){
