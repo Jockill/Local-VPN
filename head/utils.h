@@ -1,6 +1,13 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
+#include <arpa/inet.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #define SYN (1<<0)
 #define FIN (1<<1)

@@ -1,10 +1,3 @@
-#include <arpa/inet.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <string.h>
-#include <stdio.h>
-#include <unistd.h>
 #include "../head/utils.h"
 
 
