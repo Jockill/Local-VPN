@@ -27,7 +27,7 @@ void init_addr(struct sockaddr_in* addr, char* ip, char* port)
                 addr->sin_addr.s_addr = INADDR_ANY;
         }
 	else if(inet_pton(AF_INET, ip, &addr->sin_addr) != 1){
-                tue_moi("inet_pton",0);
+                tue_moi("init_addr: inet_pton",0);
         }
         //port
         uint16_t port_reel = (uint16_t) strtol(port,NULL,0);
