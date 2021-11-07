@@ -34,7 +34,8 @@ void check_args_dst(int argc, char** argv)
     return;
 }
 
-void check_args_src(int argc, char** argv){
+//??
+/*void check_args_src(int argc, char** argv){
 
 
 
@@ -45,10 +46,13 @@ void check_args_src(int argc, char** argv){
         exit(1);
     }
 
-}
+}*/
 
-int negociation_dst(int sockServer, int sockClient,
-                    struct sockaddr_in* client, fenetre* fen, int* mode)
+
+//Pour pouvoir gérer le multiflux, il faudra utiliser FD_SET et jouer avec les
+//fd pour savoir quel flux est pret.
+int negociation_dst(int* sockServer, int* sockClient,
+                    struct sockaddr_in* addrClient, fenetre* fenetre, int* mode)
 {
         //Preconditions
         if (sockClient < 0)
@@ -68,17 +72,17 @@ int negociation_dst(int sockServer, int sockClient,
 
         paquet paquet = {0};
         ssize_t tmp = 0;
-        socklen_t lenAddrClient = sizeof(addrClient);
+        socklen_t lenAddrClient = sizeof(&addrClient);
         unsigned char type = 0;
-        fd_set sockSet;
-        FD_ZERO(&sockSet);
-        FD_SET(sockServer, &sockSet);
+        // fd_set sockSet;
+        // FD_ZERO(&sockSet);
+        // FD_SET(sockServer, &sockSet);
 
         //reception SYN
         while ((paquet.type != SYN) && (tmp != 52))
         {
-                tmp = recvfrom(sockClient, paquet, TAILLE_PAQUET, NULL,
-                                  (struct sockaddr*)&addrClient, lenAddrClient);
+                tmp = recvfrom(sockClient, (void*)&paquet, TAILLE_PAQUET, NULL,
+                                  (struct sockaddr*)addrClient, lenAddrClient);
                 if (tmp == -1)
                         tue_moi("negociation_dst, recvfrom", 2,
                                 sockServer, sockClient);
@@ -96,7 +100,23 @@ int negociation_dst(int sockServer, int sockClient,
         tmp = 0;
         while((paquet.type != ACK) && (tmp != 52))
         {
-                //TODO
+                tmp = sendto(sockClient, (void*)&paquet, TAILLE_PAQUET, NULL,
+                            (struct sockaddr*)addrClient, lenAddrClient);
+                if (tmp == -1)
+                        tue_moi("negociation_dst, sendto", 2,
+                                sockServer, sockClient);
+        }
+
+        //Reception ACK
+        tmp = 0;
+        paquet = cree_paquet(0,0,0,0,0,0,NULL);
+        while((paquet.type != ACK) && (tp != 52))
+        {
+                tmp = recvfrom(sockClient, (void*)&paquet, TAILLE_PAQUET, NULL,
+                              (struct sockaddr*)addrClient, lenAddrClient);
+                if (tmp == -1)
+                        tue_moi("negociation_dst, recvfrom", 2,
+                                sockClient, sockServer);
         }
 
         return 0;
