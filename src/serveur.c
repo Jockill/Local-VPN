@@ -52,7 +52,7 @@ void check_args_dst(int argc, char** argv)
 //Pour pouvoir gérer le multiflux, il faudra utiliser FD_SET et jouer avec les
 //fd pour savoir quel flux est pret.
 int negociation_dst(int* sockServer, int* sockClient,
-                    struct sockaddr_in* addrClient, fenetre* fenetre, int* mode)
+                    struct sockaddr_in* addrClient, fenetre* fen, int* mode)
 {
         //Preconditions
         if (sockClient < 0)
