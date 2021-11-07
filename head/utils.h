@@ -1,3 +1,25 @@
+typedef struct paquet
+{ //utiliser _uint ? ==> mieux représenter l'intention.
+    unsigned char idFlux;
+    unsigned char type;
+    unsigned short numSeq;
+    unsigned short numAck;
+    unsigned char ecn;
+    unsigned char tailleFenetre; //en nombre d'octets
+    unsigned char donnees[TAILLE_DONNEES];
+} paquet;
+
+typedef struct fenetre
+{
+    unsigned int debut;
+    unsigned int fin;
+    //Taille de la fenetre d'envoi en nombre de paquets, identique a la taille
+    //de la fenetre de reception
+    unsigned char tailleEnvoi;
+    //Taille de la fenetre de congestion en nombre de paquets
+    unsigned char tailleCongestion;
+} fenetre;
+
 
 /*!
   \brief Termine le programme avec un message d'erreur et ferme `fdc` \
