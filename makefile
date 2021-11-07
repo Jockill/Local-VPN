@@ -1,8 +1,5 @@
 FLAGS = -g -Wall -Wextra
 
-ifndef VERBOSE
-.SILENT:
-endif
 
 vpath %.h head/
 vpath %.c src/
@@ -20,6 +17,9 @@ obj/utils.o: utils.c utils.h
 	mkdir -p obj/
 	gcc $(FLAGS) -c $< -o $@
 
+ifndef VERBOSE
+.SILENT:
+endif
 
 medium:
 	if [ -x ./getMedium.sh ]; then \
