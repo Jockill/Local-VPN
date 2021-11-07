@@ -27,7 +27,7 @@ typedef struct paquet
     unsigned short numAck;
     unsigned char ecn;
     unsigned char tailleFenetre; //en nombre d'octets
-    unsigned char donnees[TAILLE_DONNEES];
+    char donnees[TAILLE_DONNEES];
 } paquet;
 
 typedef struct fenetre
@@ -64,19 +64,18 @@ void init_addr(struct sockaddr_in* addr, char* ip, char* port)
 	if (addr == NULL)
 		tue_moi("init_addr: addr == NULL.", 0);
 	//ip
-	in_addr_t ipNetwork;
-	int tmp;
-	if (ip != NULL) tmp = inet_pton(AF_INET, ip, &ipNetwork);
-	else tmp = inet_pton(AF_INET, INADDR_ANY, &ipNetwork);
-        if (tmp == 0) tue_moi("init_addr: ip ne correspond pas à une adresse IPv4 valide.", 0);
-	
+        if(!ip){
+                addr->sin_addr.s_addr = INADDR_ANY;
+        }
+	else if(inet_pton(AF_INET, ip, &addr->sin_addr) != 1){
+                tue_moi("inet_pton",0);
+        }
         //port
         uint16_t port_reel = (uint16_t) strtol(port,NULL,0);
 	if (2048 > port_reel || port_reel > 49151)
 		tue_moi("init_addr: port n'est pas dans le bon intervalle.", 0);
-
+        
         addr->sin_family = AF_INET;
-        addr->sin_addr.s_addr = ipNetwork;
         addr->sin_port = htons(port_reel);
 }
 
@@ -112,7 +111,6 @@ int ipv4_valide(char* ip){
 		}
 		token = strtok(NULL,".");
 		if(token) nombrePoint++;
-        printf("%d\n",nombrePlage);
 	}
 	if(nombrePoint != 3) return 0;
 	return 1;
@@ -126,7 +124,7 @@ int ipv4_valide(char* ip){
 paquet cree_paquet(unsigned char idFlux, unsigned char type,
                   unsigned short numSeq, unsigned short numAck,
                   unsigned char ecn, unsigned char tailleFenetre,
-                  unsigned char* donnees)
+                  char* donnees)
 {
         paquet paquet;
         paquet.idFlux = idFlux;
@@ -135,10 +133,16 @@ paquet cree_paquet(unsigned char idFlux, unsigned char type,
         paquet.numAck = numAck;
         paquet.ecn = ecn;
         paquet.tailleFenetre = tailleFenetre;
-        if (strlen(donnees) > 44)
+        if(donnees!=NULL){
+                if (strlen(donnees) > 44)
                 fprintf(stderr, "Attention, les donnees ont ete tronquees.\n");
-        strncpy(paquet.donnees,donnees,44); // attention si le 44ième octets n'est pas un '\0' alors le string
+
+                strncpy(paquet.donnees,donnees,44); // attention si le 44ième octets n'est pas un '\0' alors le string
                                             // ne terminera pas par le char sentinel
+        }else{
+                paquet.donnees[0]='\0';
+        }
+        printf("test\n");
         return paquet;
 }
 
@@ -154,12 +158,6 @@ void modif_taille_fenetre(fenetre* fen, unsigned int debut, unsigned int fin)
         if (fen == NULL)
         {
                 fprintf(stderr, "modif_taille_fenetre: fen NULL.\n");
-                exit(1);
-        }
-        //Debut
-        if (debut < 0)
-        {
-                fprintf(stderr, "modif_taille_fenetre: debut doit etre positif.\n");
                 exit(1);
         }
         //Fin
