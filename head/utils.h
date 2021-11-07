@@ -97,6 +97,11 @@ paquet cree_paquet(unsigned char idFlux, unsigned char type,
                   unsigned char ecn, unsigned char tailleFenetre,
                   char* donnees);
 
+/*!
+  \brief Affiche le contenu d'un paquet
+  \param paquet* paquet Le paquet à afficher
+*/
+void affiche_paquet(paquet* paquet);
 
 /******************************************************************************/
 /*********************************** FENETRE **********************************/

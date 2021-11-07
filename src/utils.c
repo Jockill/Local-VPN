@@ -105,6 +105,28 @@ paquet cree_paquet(unsigned char idFlux, unsigned char type,
         return paquet;
 }
 
+void affiche_paquet(paquet* paquet)
+{
+	printf("=======================================\n");
+	printf("Flux: %d\n", paquet->idFlux);
+	printf("Type: ");
+	if (paquet->type & SYN)
+		printf("SYN\t");
+	if (paquet->type & FIN)
+		printf("FIN\t");
+	if (paquet->type & RST)
+		printf("RST\t");
+	if (paquet->type & ACK)
+		printf("ACK");
+	printf("\n");
+	printf("Numero de sequence: %d\n", paquet->numSeq);
+	printf("Numero d'acquittement: %d\n", paquet->numAck);
+	printf("ECN: \n", paquet->ecn);
+	printf("Taille fenetre: %d\n", paquet->tailleFenetre);
+	printf("Donnees:\n%s\n", paquet->donnees);
+	printf("=======================================\n");
+}
+
 
 /******************************************************************************/
 /*********************************** FENETRE **********************************/
