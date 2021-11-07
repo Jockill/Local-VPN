@@ -12,7 +12,6 @@
 #include "../head/utils.h"
 
 void check_args_src(int argc, char** argv){
-    printf("%d\n",argc);
 
     if(argc < 5){
         fprintf(stderr,"Erreur : Argument manquant.\n");
@@ -46,8 +45,8 @@ void check_args_src(int argc, char** argv){
 }
 
 int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur, int mode, fenetre* fen){
-    short numA =(short) rand();
-    short numB;
+    unsigned short numA =(unsigned short) rand();
+    unsigned short numB;
     ssize_t tmp;
     socklen_t tailleServ = sizeof(*serveur);
 
@@ -69,26 +68,29 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
             sizeof(premierHandShake),0,(struct sockaddr*)serveur,tailleServ)) == -1){
             tue_moi("sendto",2,sockServeur,sockClient);
         }
+        affiche_paquet(&premierHandShake);
+        printf("1\n");
         if(tmp !=52) continue; //si on a pas reussi a toute envoyer on renvoie
         FD_ZERO(&acquittement);
         FD_SET(sockClient,&acquittement);
-        struct timeval timer = {1,0};
-
+        struct timeval timer = {5,0};
         if(select(FD_SETSIZE,&acquittement,NULL,NULL,&timer) ==-1){
             tue_moi("sendto",2,sockServeur,sockClient);
         }
-
         if(FD_ISSET(sockClient,&acquittement)){
             if((tmp = recvfrom(sockClient,(void *)&ack,52,0,(struct sockaddr*)serveur,&tailleServ))==-1){
                 tue_moi("sendto",2,sockServeur,sockClient);
             }
+            affiche_paquet(&ack);
+            printf("2\n");
             if(tmp != 52) continue; //si on a pas reussi a tout recevoir
             if((ack.type & (SYN|ACK))==0) continue;
+            printf("2.5\n");
             if(ack.numAck != numA+1) continue;
+            printf("3\n");
             numB = ack.numSeq;
             fen->tailleEnvoi= ack.tailleFenetre;
             ack1Recu=1;
-            printf("j'ai reçu l'aquitement\n");
         }
     }
     paquet dernierHandShake = cree_paquet(0,ACK,numA+1,numB+1,0,0,NULL);
@@ -107,7 +109,6 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
 }
 
 int main(int argc, char** argv){
-
     check_args_src(argc,argv);
 
     int mode = strtol(argv[1],NULL,0);
@@ -130,5 +131,4 @@ int main(int argc, char** argv){
         tue_moi("bind",0);
     }
     negociation_src(sockServeur,sockClient,&serveur,mode,&fen);
-
 }
