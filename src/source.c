@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#include "utils.c"
+#include "../head/utils.h"
 
 void check_args_src(int argc, char** argv){
     printf("%d\n",argc);
@@ -103,7 +103,7 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
         fprintf(stderr,"plantage handsake\n");
         exit(1);
     }
-    
+
     return 0;
 }
 
@@ -115,7 +115,7 @@ int main(int argc, char** argv){
     fenetre fen;
     fen.debut = fen.fin = 0;
     struct sockaddr_in serveur, client;
-    
+
     srand(time(NULL));
     init_addr(&serveur,argv[2],argv[4]);
     init_addr(&client,NULL,argv[3]);

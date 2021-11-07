@@ -4,42 +4,8 @@
 #include <sys/time.h>
 #include <string.h>
 #include <stdio.h>
-
-
-#define SYN (1<<0)
-#define FIN (1<<1)
-#define RST (1<<2)
-#define ACK (1<<4)
-
-#define STOP_N_WAIT 1
-#define GO_BACK_N 2
-
-#define TAILLE_PAQUET 52
-#define TAILLE_DONNEES 44
-#define TAILLE_FENETRE_SERVEUR 5
-
-
-typedef struct paquet
-{ //utiliser _uint ? ==> mieux représenter l'intention.
-    unsigned char idFlux;
-    unsigned char type;
-    unsigned short numSeq;
-    unsigned short numAck;
-    unsigned char ecn;
-    unsigned char tailleFenetre; //en nombre d'octets
-    char donnees[TAILLE_DONNEES];
-} paquet;
-
-typedef struct fenetre
-{
-    unsigned int debut;
-    unsigned int fin;
-    //Taille de la fenetre d'envoi en nombre de paquets, identique a la taille
-    //de la fenetre de reception
-    unsigned char tailleEnvoi;
-    //Taille de la fenetre de congestion en nombre de paquets
-    unsigned char tailleCongestion;
-} fenetre;
+#include <unistd.h>
+#include "../head/utils.h"
 
 
 void tue_moi(char* msg, int fdc, ...)
@@ -74,7 +40,7 @@ void init_addr(struct sockaddr_in* addr, char* ip, char* port)
         uint16_t port_reel = (uint16_t) strtol(port,NULL,0);
 	if (2048 > port_reel || port_reel > 49151)
 		tue_moi("init_addr: port n'est pas dans le bon intervalle.", 0);
-        
+
         addr->sin_family = AF_INET;
         addr->sin_port = htons(port_reel);
 }
