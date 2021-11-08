@@ -172,6 +172,5 @@ int main(int argc, char** argv){
     sleep(2);
     fin_src(sockClient,&serveur,premierNumSeq);
     printf("fin reussi!\n");
-    sleep(2);
     return 0;
 }
