@@ -15,11 +15,11 @@ void check_args_src(int argc, char** argv){
 
     if(argc < 5){
         fprintf(stderr,"Erreur : Argument manquant.\n");
-        fprintf(stderr,"Syntaxe attendu : ./source <mode> <IP_distante> <port_local> <port_ecoute_src_pertubateur>\n");
+        fprintf(stderr,"Syntaxe attendu : ./%s <mode> <IP_distante> <port_local> <port_ecoute_src_pertubateur>\n",argv[0]);
         exit(1);
     } else if(argc > 5){
         fprintf(stderr,"Erreur : Trop d'argument.\n");
-        fprintf(stderr,"Syntaxe attendu : ./source <mode> <IP_distante> <port_local> <port_ecoute_src_pertubateur>\n");
+        fprintf(stderr,"Syntaxe attendu : ./%s <mode> <IP_distante> <port_local> <port_ecoute_src_pertubateur>\n",argv[0]);
         exit(1);
     }
     if(!ipv4_valide(argv[2])){
@@ -64,12 +64,12 @@ int negociation_src(int sockClient,struct sockaddr_in* serveur, int mode, fenetr
     int ack1Recu = 0;
     while(!ack1Recu){
         if((tmp = sendto(sockClient,(void *)&premierHandShake,
-            sizeof(premierHandShake),0,(struct sockaddr*)serveur,tailleServ)) == -1){
+            TAILLE_PAQUET,0,(struct sockaddr*)serveur,tailleServ)) == -1){
             tue_moi("sendto",1,sockClient);
         }
         affiche_paquet(&premierHandShake);
         printf("1\n");
-        if(tmp !=52) continue; //si on a pas reussi a toute envoyer on renvoie
+        if(tmp !=TAILLE_PAQUET) continue; //si on a pas reussi a toute envoyer on renvoie
         FD_ZERO(&acquittement);
         FD_SET(sockClient,&acquittement);
         struct timeval timer = {5,0};
@@ -77,12 +77,12 @@ int negociation_src(int sockClient,struct sockaddr_in* serveur, int mode, fenetr
             tue_moi("sendto",1,sockClient);
         }
         if(FD_ISSET(sockClient,&acquittement)){
-            if((tmp = recvfrom(sockClient,(void *)&ack,52,0,(struct sockaddr*)serveur,&tailleServ))==-1){
+            if((tmp = recvfrom(sockClient,(void *)&ack,TAILLE_PAQUET,0,(struct sockaddr*)serveur,&tailleServ))==-1){
                 tue_moi("sendto",1,sockClient);
             }
             affiche_paquet(&ack);
             printf("2\n");
-            if(tmp != 52) continue; //si on a pas reussi a tout recevoir
+            if(tmp != TAILLE_PAQUET) continue; //si on a pas reussi a tout recevoir
             if((ack.type & (SYN|ACK))==0) continue;
             printf("2.5\n");
             if(ack.numAck != numA+1) continue;
@@ -94,16 +94,59 @@ int negociation_src(int sockClient,struct sockaddr_in* serveur, int mode, fenetr
     }
     paquet dernierHandShake = cree_paquet(0,ACK,numA+1,numB+1,0,0,NULL);
     if((tmp = sendto(sockClient,(void*)&dernierHandShake,
-            52,0,(struct sockaddr*)serveur,tailleServ)) == -1){
+            TAILLE_PAQUET,0,(struct sockaddr*)serveur,tailleServ)) == -1){
             tue_moi("sendto",1,sockClient);
     }
-    if(tmp !=52){
+    if(tmp !=TAILLE_PAQUET){
         close(sockClient);
         fprintf(stderr,"plantage handsake\n");
         exit(1);
     }
 
     return 0;
+}
+
+void fin_src(int sockClient,struct sockaddr_in* serveur,unsigned short numSec){
+    paquet premierHandShake = cree_paquet(0,FIN,numSec,0,0,0,NULL);
+    int numSeqack;
+    paquet ack;
+    socklen_t tailleServ = sizeof(*serveur);
+    fd_set sockset;
+    int ack1recu = 0;
+    int partiel=0;
+    while(!ack1recu){
+        if((partiel = sendto(sockClient,(void *)&premierHandShake,
+            sizeof(premierHandShake),0,(struct sockaddr*)serveur,tailleServ)) == -1){
+            tue_moi("sendto",1,sockClient);
+        }
+        if(partiel != TAILLE_PAQUET) continue;
+        FD_ZERO(&sockset);
+        FD_SET(sockClient,&sockset);
+        struct timeval timer = {2,0};
+        if(select(FD_SETSIZE,&sockset,NULL,NULL,&timer) ==-1){
+            tue_moi("sendto",1,sockClient);
+        }
+        if(FD_ISSET(sockClient,&sockset)){
+            if((partiel = recvfrom(sockClient,(void *)&ack,TAILLE_PAQUET,0,(struct sockaddr*)serveur,&tailleServ))==-1){
+                tue_moi("sendto",1,sockClient);
+            }
+            if(partiel != TAILLE_PAQUET) continue; //si on a pas reussi a tout recevoir
+            if((ack.type & (FIN|ACK))==0) continue;
+            if(ack.numAck != numSec) continue;
+            numSeqack=ack.numSeq;
+        }
+    }
+    paquet dernierHandShake = cree_paquet(0, ACK,numSec+1,numSeqack+1,0,0,NULL);
+    if((partiel = sendto(sockClient,(void*)&dernierHandShake,
+            TAILLE_PAQUET,0,(struct sockaddr*)serveur,tailleServ)) == -1){
+            tue_moi("sendto",1,sockClient);
+    }
+    if(partiel !=TAILLE_PAQUET){
+        close(sockClient);
+        fprintf(stderr,"plantage handsake\n");
+        exit(1);
+    }
+    return;
 }
 
 int main(int argc, char** argv){
