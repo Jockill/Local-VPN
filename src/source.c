@@ -44,7 +44,7 @@ void check_args_src(int argc, char** argv){
     return;
 }
 
-int negociation_src(int sockClient,struct sockaddr_in * serveur, int mode, fenetre* fen){
+unsigned short negociation_src(int sockClient,struct sockaddr_in * serveur, int mode, fenetre* fen){
     unsigned short numA =(unsigned short) rand();
     unsigned short numB;
     ssize_t tmp;
@@ -165,7 +165,9 @@ int main(int argc, char** argv){
     if(bind(sockClient,(struct sockaddr *)&client,sizeof(client))==-1){
         tue_moi("bind",0);
     }
-    int premierNumSeq = negociation_src(sockClient,&serveur,mode,&fen)+1; //temporaire
+    
+    
+    unsigned short premierNumSeq = negociation_src(sockClient,&serveur,mode,&fen)+1; //temporaire
     printf("negociation reussite\n");
     sleep(2);
     fin_src(sockClient,&serveur,premierNumSeq);
