@@ -3,3 +3,5 @@ obj*
 doc*
 *.tar*
 *.py
+destination
+source

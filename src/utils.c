@@ -1,31 +1,5 @@
-#include <arpa/inet.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <sys/time.h>
+#include "../head/utils.h"
 
-#define SYN (1<<0)
-#define FIN (1<<1)
-#define RST (1<<2)
-#define ACK (1<<4)
-
-typedef struct paquet
-{ //utiliser _uint ? ==> mieux représenter l'intention.
-    unsigned char idFlux;
-    unsigned char type;
-    unsigned short numSeq;
-    unsigned short numAck;
-    unsigned char ecn;
-    unsigned char tailleFenetre; //en nombre d'octets
-    unsigned char donnees[44];
-} paquet;
-
-typedef struct fenetre
-{
-    unsigned int debut;
-    unsigned int fin;
-} fenetre;
-
-struct timeval timer = {1,0};
 
 void tue_moi(char* msg, int fdc, ...)
 {
@@ -44,29 +18,143 @@ void tue_moi(char* msg, int fdc, ...)
 
 void init_addr(struct sockaddr_in* addr, char* ip, char* port)
 {
-	//Gestion des preconditions
+	//Preconditions
 	//addr
 	if (addr == NULL)
 		tue_moi("init_addr: addr == NULL.", 0);
 	//ip
-	in_addr_t ipNetwork;
-	int tmp;
-	if (ip != NULL)
-		tmp = inet_pton(AF_INET, ip, &addr);
-	else
-		tmp = inet_pton(AF_INET, INADDR_ANY, &addr);
-	if (tmp == 0)
-		tue_moi("init_addr: ip ne correspond pas à une adresse IPv4 valide.", 0);
-	if (tmp == -1)
-		tue_moi("init_addr: mauvaise address family", 0);
-	//port
-	if (port < 2048 || port > 49151)
+        if(!ip){
+                addr->sin_addr.s_addr = INADDR_ANY;
+        }
+	else if(inet_pton(AF_INET, ip, &addr->sin_addr) != 1){
+                tue_moi("init_addr: inet_pton",0);
+        }
+        //port
+        uint16_t port_reel = (uint16_t) strtol(port,NULL,0);
+	if (2048 > port_reel || port_reel > 49151)
 		tue_moi("init_addr: port n'est pas dans le bon intervalle.", 0);
 
-	return;
+        addr->sin_family = AF_INET;
+        addr->sin_port = htons(port_reel);
+}
+
+int ipv4_valide(char* ip){
+	if(!ip) return 0;
+
+	char ipCpy[20];
+	int nombrePoint = 0;
+	int nombrePlage;
+	char* token;
+
+	if(!strncpy(ipCpy,ip,20)){
+		fprintf(stderr,"strncpy a echoué.\n");
+		exit(-1);
+	}
+
+	token = strtok(ipCpy,".");
+
+	while(token){
+		nombrePlage = atoi(token);
+
+        char* cpyToken = token;
+        while(*cpyToken != '\0'){
+            if(*cpyToken >= '0' && *cpyToken <= '9'){
+                cpyToken++;
+            }else{
+                return 0;
+            }
+        }
+
+		if(nombrePlage<0 || nombrePlage >255){
+			return 0;
+		}
+		token = strtok(NULL,".");
+		if(token) nombrePoint++;
+	}
+	if(nombrePoint != 3) return 0;
+	return 1;
 }
 
 
 /******************************************************************************/
 /********************************** PAQUETS ***********************************/
 /******************************************************************************/
+
+paquet cree_paquet(unsigned char idFlux, unsigned char type,
+                  unsigned short numSeq, unsigned short numAck,
+                  unsigned char ecn, unsigned char tailleFenetre,
+                  char* donnees)
+{
+        paquet paquet;
+        paquet.idFlux = idFlux;
+        paquet.type = type;
+        paquet.numSeq = numSeq;
+        paquet.numAck = numAck;
+        paquet.ecn = ecn;
+        paquet.tailleFenetre = tailleFenetre;
+        if(donnees!=NULL){
+                if (strlen(donnees) > 44)
+                fprintf(stderr, "Attention, les donnees ont ete tronquees.\n");
+
+                strncpy(paquet.donnees,donnees,44); // attention si le 44ième octets n'est pas un '\0' alors le string
+                                            // ne terminera pas par le char sentinel
+        }else{
+                paquet.donnees[0]='\0';
+        }
+        return paquet;
+}
+
+void affiche_paquet(paquet* paquet)
+{
+	printf("=======================================\n");
+	printf("Flux: %d\n", paquet->idFlux);
+	printf("Type: ");
+	if (paquet->type & SYN)
+		printf("SYN\t");
+	if (paquet->type & FIN)
+		printf("FIN\t");
+	if (paquet->type & RST)
+		printf("RST\t");
+	if (paquet->type & ACK)
+		printf("ACK");
+	printf("\n");
+	printf("Numero de sequence: %d\n", paquet->numSeq);
+	printf("Numero d'acquittement: %d\n", paquet->numAck);
+	printf("ECN:%d \n", paquet->ecn);
+	printf("Taille fenetre: %d\n", paquet->tailleFenetre);
+	printf("Donnees:\n%s\n", paquet->donnees);
+	printf("=======================================\n");
+}
+
+
+/******************************************************************************/
+/*********************************** FENETRE **********************************/
+/******************************************************************************/
+
+void modif_taille_fenetre(fenetre* fen, unsigned int debut, unsigned int fin)
+{
+        //Preconditions
+        //Fenetre
+        if (fen == NULL)
+        {
+                fprintf(stderr, "modif_taille_fenetre: fen NULL.\n");
+                exit(1);
+        }
+        //Fin
+        if (fin < debut)
+        {
+                fprintf(stderr, "modif_taille_fenetre: fin doit etre plus grand que debut.\n");
+                exit(1);
+        }
+
+        fen->debut = debut;
+        fen->fin = fin;
+}
+
+int taille_fenetre(fenetre* fen)
+{
+        if (fen == NULL)
+                return 0;
+        else
+                return (fen->fin - fen->debut);
+}
