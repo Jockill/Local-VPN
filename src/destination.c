@@ -36,22 +36,17 @@ void check_args_dst(int argc, char** argv)
 
 //Pour pouvoir gérer le multiflux, il faudra utiliser FD_SET et jouer avec les
 //fd pour savoir quel flux est pret.
-int negociation_dst(int* sockServer, int* sockClient,
+int negociation_dst(int* sockServer,
                     struct sockaddr_in* addrClient, fenetre* fen, int* mode)
 {
         //Preconditions
-        if (*sockClient < 0)
-        {
-                fprintf(stderr, "negociation_dst: sockClient < 0.\n");
-                exit(1);
-        }
         if (*sockServer < 0)
         {
                 fprintf(stderr, "negociation_dst: sockServer < 0.\n");
                 exit(1);
         }
         if (addrClient == NULL)
-                tue_moi("negociation_dst: client NULL", 2, *sockClient,
+                tue_moi("negociation_dst: client NULL", 1,
                         *sockServer);
         unsigned short randAck =(unsigned short) rand();
         paquet paquetEnv = {0};
@@ -66,8 +61,8 @@ int negociation_dst(int* sockServer, int* sockClient,
                 tmp = recvfrom(*sockServer, (void*)&paquetRecv, TAILLE_PAQUET, 0,
                                   (struct sockaddr*)addrClient, &lenAddrClient);
                 if (tmp == -1)
-                        tue_moi("negociation_dst, recvfrom", 2,
-                                *sockServer, *sockClient);
+                        tue_moi("negociation_dst, recvfrom", 1,
+                                *sockServer);
                 printf("j'ai recu un paquet d'un client\n");
         }
 
@@ -83,26 +78,26 @@ int negociation_dst(int* sockServer, int* sockClient,
         tmp = 0; // on reinitialise tmp
         while((paquetRecv.type != ACK) || (tmp != 52) || (paquetRecv.numAck != randAck+1))
         {
-                tmp = sendto(*sockClient, (void*)&paquetEnv, TAILLE_PAQUET, 0,
+                tmp = sendto(*sockServer, (void*)&paquetEnv, TAILLE_PAQUET, 0,
                             (struct sockaddr*)addrClient, lenAddrClient);
                 if (tmp == -1)
-                        tue_moi("negociation_dst, sendto", 2,
-                                *sockServer, *sockClient);
+                        tue_moi("negociation_dst, sendto", 1,
+                                *sockServer);
                 affiche_paquet(&paquetEnv);
                 //Reception ACK               
                 FD_ZERO(&sockSet);
                 FD_SET(*sockServer, &sockSet);
                 struct timeval timer = {5,0};
                 if(select(FD_SETSIZE,&sockSet,NULL,NULL,&timer) ==-1)
-                        tue_moi("sendto",2,*sockServer,*sockClient);
+                        tue_moi("sendto",1,*sockServer);
                 if(FD_ISSET(*sockServer,&sockSet)){
                         if((tmp = recvfrom(*sockServer,(void *)&paquetRecv,TAILLE_PAQUET,0,
                                           (struct sockaddr*)addrClient,&lenAddrClient))==-1)
-                                tue_moi("sendto",2,*sockServer,*sockClient);
+                                tue_moi("sendto",1,*sockServer);
                         affiche_paquet(&paquetRecv);
                         printf("paquetRecv.numAck = %d et randAck+1 = %d\n",paquetRecv.numAck,randAck+1);
                         printf("tmp = %d\n",tmp);
-                        printf("(paquetRecv.type != SYN) = %d",paquetRecv.type != SYN);
+                        printf("(paquetRecv.type != ACK) = %d",paquetRecv.type != ACK);
                 }
         }
         return 0;
@@ -139,24 +134,20 @@ int main(int argc, char** argv)
         init_addr(&addrServeur, NULL, argv[2]);
         init_addr(&addrClient, argv[1], argv[3]);
         //Sockets
-        int sockClient = socket(PF_INET, SOCK_DGRAM, 0);
-        if(sockClient == -1){
-                tue_moi("socket",0);
-        }
         int sockServeur = socket(PF_INET, SOCK_DGRAM, 0);
         if(sockServeur == -1){
-                tue_moi("socket",1,sockClient);
+                tue_moi("socket",0);
         }
         if (bind(sockServeur, (struct sockaddr*)&addrServeur,
                  sizeof(addrServeur)) == -1)
         {
-                tue_moi("main, bind serveur", 2,sockClient, sockServeur);
+                tue_moi("main, bind serveur", 1, sockServeur);
         }        
         int mode = 0;
         //Fenetre
         fenetre fen = {0,0,TAILLE_FENETRE_SERVEUR,0};
 
 
-        negociation_dst(&sockServeur, &sockClient, &addrClient, &fen, &mode);
+        negociation_dst(&sockServeur, &addrClient, &fen, &mode);
         return 0;
 }

@@ -44,7 +44,7 @@ void check_args_src(int argc, char** argv){
     return;
 }
 
-int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur, int mode, fenetre* fen){
+int negociation_src(int sockClient,struct sockaddr_in* serveur, int mode, fenetre* fen){
     unsigned short numA =(unsigned short) rand();
     unsigned short numB;
     ssize_t tmp;
@@ -53,7 +53,6 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
     if(mode != GO_BACK_N && mode != STOP_N_WAIT){
         fprintf(stderr,"mode incorrecte\n");
         close(sockClient);
-        close(sockServeur);
         exit(1);
     }
     paquet premierHandShake = cree_paquet(0,SYN,numA,0,0,mode-1,NULL);
@@ -64,9 +63,9 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
     fd_set acquittement;
     int ack1Recu = 0;
     while(!ack1Recu){
-        if((tmp = sendto(sockServeur,(void *)&premierHandShake,
+        if((tmp = sendto(sockClient,(void *)&premierHandShake,
             sizeof(premierHandShake),0,(struct sockaddr*)serveur,tailleServ)) == -1){
-            tue_moi("sendto",2,sockServeur,sockClient);
+            tue_moi("sendto",1,sockClient);
         }
         affiche_paquet(&premierHandShake);
         printf("1\n");
@@ -75,11 +74,11 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
         FD_SET(sockClient,&acquittement);
         struct timeval timer = {5,0};
         if(select(FD_SETSIZE,&acquittement,NULL,NULL,&timer) ==-1){
-            tue_moi("sendto",2,sockServeur,sockClient);
+            tue_moi("sendto",1,sockClient);
         }
         if(FD_ISSET(sockClient,&acquittement)){
             if((tmp = recvfrom(sockClient,(void *)&ack,52,0,(struct sockaddr*)serveur,&tailleServ))==-1){
-                tue_moi("sendto",2,sockServeur,sockClient);
+                tue_moi("sendto",1,sockClient);
             }
             affiche_paquet(&ack);
             printf("2\n");
@@ -94,13 +93,12 @@ int negociation_src(int sockServeur, int sockClient,struct sockaddr_in* serveur,
         }
     }
     paquet dernierHandShake = cree_paquet(0,ACK,numA+1,numB+1,0,0,NULL);
-    if((tmp = sendto(sockServeur,(void*)&dernierHandShake,
+    if((tmp = sendto(sockClient,(void*)&dernierHandShake,
             52,0,(struct sockaddr*)serveur,tailleServ)) == -1){
-            tue_moi("sendto",2,sockServeur,sockClient);
+            tue_moi("sendto",1,sockClient);
     }
     if(tmp !=52){
         close(sockClient);
-        close(sockServeur);
         fprintf(stderr,"plantage handsake\n");
         exit(1);
     }
@@ -119,10 +117,6 @@ int main(int argc, char** argv){
     srand(time(NULL));
     init_addr(&serveur,argv[2],argv[4]);
     init_addr(&client,NULL,argv[3]);
-    int sockServeur = socket(PF_INET,SOCK_DGRAM,0); // socket avec laquelle j'envoie
-    if(sockServeur == -1){
-        tue_moi("socket",0);
-    }
     int sockClient = socket(PF_INET,SOCK_DGRAM,0); // socket avec laquelle je reçoit
     if(sockClient == -1){
         tue_moi("socket",1,sockClient);
@@ -130,5 +124,5 @@ int main(int argc, char** argv){
     if(bind(sockClient,(struct sockaddr*)&client,sizeof(client))==-1){
         tue_moi("bind",0);
     }
-    negociation_src(sockServeur,sockClient,&serveur,mode,&fen);
+    negociation_src(sockClient,&serveur,mode,&fen);
 }
