@@ -5,24 +5,25 @@ vpath %.h head/
 vpath %.c src/
 vpath %.o obj/
 
-main: source destination
+main: source destination medium
 
 source: source.c utils.o
-	gcc $^ $(FLAGS) -o "source"
+	echo "Construction de source..."
+	@gcc $^ $(FLAGS) -o "source"
+	echo "Source construite!"
 
 destination: destination.c utils.o
+	echo "Construction de destination..."
 	gcc $^ $(FLAGS) -o "destination"
+	echo "Destination construite!"
 
 obj/utils.o: utils.c utils.h
-	mkdir -p obj/
-	gcc $(FLAGS) -c $< -o $@
+	@mkdir -p obj/
+	@gcc $(FLAGS) -c $< -o $@
 
-ifndef VERBOSE
-.SILENT:
-endif
 
 medium:
-	if [ -x ./getMedium.sh ]; then \
+	@if [ -x ./getMedium.sh ]; then \
 		./getMedium.sh; \
 	else \
 		echo "Vous n'avez pas les permissions pour executer getMedium.sh"; \
