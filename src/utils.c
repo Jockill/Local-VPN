@@ -126,6 +126,30 @@ void affiche_paquet(paquet* paquet)
 	printf("=======================================\n");
 }
 
+int attend_paquet(int socket,struct sockaddr* adresse, paquet * buf){
+        if(!buf){
+                fprintf(stderr,"buf doit être non null\n");
+                close(socket);
+                exit(1);
+        }
+        socklen_t tailleAdresse= sizeof(*adresse);
+        int partiel;
+        fd_set sockSet;
+        FD_ZERO(&sockSet);
+        FD_SET(socket,&sockSet);
+        struct timeval timer = {5,0};
+        if(select(FD_SETSIZE,&sockSet,NULL,NULL,&timer) ==-1){
+            tue_moi("select",1,socket);
+        }
+        if(FD_ISSET(socket,&sockSet)){
+            if((partiel = recvfrom(socket,(void *)buf,TAILLE_PAQUET,0,(struct sockaddr*)adresse,&tailleAdresse))==-1){
+                tue_moi("recvfrom",1,socket);
+            }
+            if(partiel!=52) return 0;
+            return 1;
+        }
+        return 0;
+}
 
 /******************************************************************************/
 /*********************************** FENETRE **********************************/

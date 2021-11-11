@@ -107,6 +107,17 @@ paquet cree_paquet(unsigned char idFlux, unsigned char type,
 */
 void affiche_paquet(paquet* paquet);
 
+/*!
+  \brief attend un paquet sur la socket "socket" et la place dans buf si un paquet est arrivée
+  \param int socket La socket sur laquelle on écoute
+  \param struct sockaddr* L'adresse de la source
+  \param paquet * buf zone de stockage du paquet
+  \warning peut importe le resultat le contenu de buf peut être modifier
+  \return 1 si un paquet et arrivé 0 sinon
+*/
+int attend_paquet(int socket, struct sockaddr* adresse, paquet * buf);
+
+
 /******************************************************************************/
 /*********************************** FENETRE **********************************/
 /******************************************************************************/
