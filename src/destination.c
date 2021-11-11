@@ -149,7 +149,7 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 	fd_set sockSet;
 	int tmp = 0;
 	int compteur = 0;
-	//Reception FIN
+	//Reception FIN TODO -> ça n'a rien n'a foutre ici (la partie reception doit être dans le go back n et stop n wait)
 
 	while ((paquetRecv.type != FIN) || (tmp != 52))
 	{
@@ -163,8 +163,8 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 
 	//Envoi ACK + FIN et réception ACK
 	tmp = 0;
-	paquetEnv = cree_paquet(paquetRecv.idFlux, ACK+FIN, randAck,
-                                paquetRecv.numSeq+1, 0, fen->tailleEnvoi, NULL);
+	paquetEnv = cree_paquet(paquetRecv.idFlux, ACK+FIN, 0,
+                                paquetRecv.numSeq+1, 0, 0, NULL);
 	while ( ((paquetRecv.type != ACK) || (tmp != 52)) || compteur > 5)
 	{
 		//Envoi ACK+FIN
@@ -217,10 +217,8 @@ int main(int argc, char** argv)
         lastSeq = negociation_dst(&sockServeur, &addrClient, &fen, &mode);
 	fprintf(stderr, "Fin negociation.\n");
 	sleep(2);
-	fin_dst(&sockServer, &addrClient, lastSeq);
+	fin_dst(&sockServeur, &addrClient, lastSeq);
 	fprintf(stderr, "Fin.\n");
-
-
 
         return 0;
 }

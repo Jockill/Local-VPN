@@ -119,7 +119,7 @@ void fin_src(int sockClient,struct sockaddr_in * serveur,unsigned short numSec){
         if(partiel != TAILLE_PAQUET) continue;
         FD_ZERO(&sockset);
         FD_SET(sockClient,&sockset);
-        struct timeval timer = {2,0};
+        struct timeval timer = {5,0};
         if(select(FD_SETSIZE,&sockset,NULL,NULL,&timer) ==-1){
             tue_moi("select",1,sockClient);
         }
@@ -129,8 +129,9 @@ void fin_src(int sockClient,struct sockaddr_in * serveur,unsigned short numSec){
             }
             if(partiel != TAILLE_PAQUET) continue; //si on a pas reussi a tout recevoir
             if((ack.type & (FIN|ACK))==0) continue;
-            if(ack.numAck != numSec) continue;
+            if(ack.numAck != numSec+1) continue;
             numSeqack=ack.numSeq;
+            ack1recu=1;
         }
         compteur++;
     }
