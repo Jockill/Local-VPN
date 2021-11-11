@@ -48,7 +48,6 @@ unsigned short negociation_src(int sockClient,struct sockaddr_in * serveur, int 
     unsigned short numA =(unsigned short) rand();
     unsigned short numB;
     ssize_t tmp;
-    socklen_t tailleServ = sizeof(*serveur);
 
     if(mode != GO_BACK_N && mode != STOP_N_WAIT){
         fprintf(stderr,"mode incorrecte\n");
@@ -60,37 +59,25 @@ unsigned short negociation_src(int sockClient,struct sockaddr_in * serveur, int 
     //Si la taille de la fenetre est a 0 quand le client ouvre la connection alors
     //la communication sera en stop and wait et si elle est a 1 alors go back n
     paquet ack;
-    fd_set acquittement;
     int ack1Recu = 0;
     while(!ack1Recu){
         if((tmp = sendto(sockClient,(void *)&premierHandShake,
-            TAILLE_PAQUET,0,(struct sockaddr *)serveur,tailleServ)) == -1){
+            TAILLE_PAQUET,0,(struct sockaddr *)serveur,TAILLE_ADRESSE)) == -1){
             tue_moi("sendto",1,sockClient);
         }
         affiche_paquet(&premierHandShake);
         if(tmp !=TAILLE_PAQUET) continue; //si on a pas reussi a toute envoyer on renvoie
-        FD_ZERO(&acquittement);
-        FD_SET(sockClient,&acquittement);
-        struct timeval timer = {5,0};
-        if(select(FD_SETSIZE,&acquittement,NULL,NULL,&timer) ==-1){
-            tue_moi("sendto",1,sockClient);
-        }
-        if(FD_ISSET(sockClient,&acquittement)){
-            if((tmp = recvfrom(sockClient,(void *)&ack,TAILLE_PAQUET,0,(struct sockaddr*)serveur,&tailleServ))==-1){
-                tue_moi("sendto",1,sockClient);
-            }
-            affiche_paquet(&ack);
-            if(tmp != TAILLE_PAQUET) continue; //si on a pas reussi a tout recevoir
-            if((ack.type & (SYN|ACK))==0) continue;
-            if(ack.numAck != numA+1) continue;
-            numB = ack.numSeq;
-            fen->tailleEnvoi= ack.tailleFenetre;
-            ack1Recu=1;
-        }
+        
+        if(attend_paquet(sockClient,(struct sockaddr *)serveur,&ack) == 0) continue;
+        if((ack.type & (SYN|ACK))==0) continue;
+        if(ack.numAck != numA+1) continue;
+        numB = ack.numSeq;
+        fen->tailleEnvoi= ack.tailleFenetre;
+        ack1Recu=1;
     }
     paquet dernierHandShake = cree_paquet(0,ACK,numA+1,numB+1,0,0,NULL);
     if((tmp = sendto(sockClient,(void *)&dernierHandShake,
-            TAILLE_PAQUET,0,(struct sockaddr *)serveur,tailleServ)) == -1){
+            TAILLE_PAQUET,0,(struct sockaddr *)serveur,TAILLE_ADRESSE)) == -1){
             tue_moi("sendto",1,sockClient);
     }
     if(tmp !=TAILLE_PAQUET){
@@ -106,43 +93,32 @@ void fin_src(int sockClient,struct sockaddr_in * serveur,unsigned short numSec){
     paquet premierHandShake = cree_paquet(0,FIN,numSec,0,0,0,NULL);
     int numSeqack;
     paquet ack;
-    socklen_t tailleServ = sizeof(*serveur);
-    fd_set sockset;
     int ack1recu = 0;
     int partiel=0;
     int compteur=0; //on ne tente d'envoyer notre FIN un certain nombre de fois avant d'abandonner
-    while(!ack1recu || compteur<5){
+    while(!ack1recu && compteur<5){
         if((partiel = sendto(sockClient,(void *)&premierHandShake,
-            sizeof(premierHandShake),0,(struct sockaddr *)serveur,tailleServ)) == -1){
+            sizeof(premierHandShake),0,(struct sockaddr *)serveur,TAILLE_ADRESSE)) == -1){
             tue_moi("sendto",1,sockClient);
         }
         if(partiel != TAILLE_PAQUET) continue;
-        FD_ZERO(&sockset);
-        FD_SET(sockClient,&sockset);
-        struct timeval timer = {5,0};
-        if(select(FD_SETSIZE,&sockset,NULL,NULL,&timer) ==-1){
-            tue_moi("select",1,sockClient);
+
+        if((attend_paquet(sockClient,(struct sockaddr*)serveur,&ack)==0)
+        || ((ack.type & (FIN|ACK))==0) || (ack.numAck != numSec+1)){ 
+            compteur++;
+            continue;
         }
-        if(FD_ISSET(sockClient,&sockset)){
-            if((partiel = recvfrom(sockClient,(void *)&ack,TAILLE_PAQUET,0,(struct sockaddr*)serveur,&tailleServ))==-1){
-                tue_moi("recvfrom",1,sockClient);
-            }
-            if(partiel != TAILLE_PAQUET) continue; //si on a pas reussi a tout recevoir
-            if((ack.type & (FIN|ACK))==0) continue;
-            if(ack.numAck != numSec+1) continue;
-            numSeqack=ack.numSeq;
-            ack1recu=1;
-        }
-        compteur++;
+        numSeqack=ack.numSeq;
+        ack1recu=1;
     }
-    paquet dernierHandShake = cree_paquet(0, ACK,numSec+1,numSeqack+1,0,0,NULL);
+    paquet dernierHandShake = cree_paquet(0,ACK,0,numSeqack+1,0,0,NULL);
     if((partiel = sendto(sockClient,(void *)&dernierHandShake,
-            TAILLE_PAQUET,0,(struct sockaddr *)serveur,tailleServ)) == -1){
+            TAILLE_PAQUET,0,(struct sockaddr *)serveur,TAILLE_ADRESSE)) == -1){
             tue_moi("sendto",1,sockClient);
     }
     if(partiel !=TAILLE_PAQUET){
         close(sockClient);
-        fprintf(stderr,"plantage handsake\n");
+        fprintf(stderr,"plantage fin\n");
         exit(1);
     }
     return;

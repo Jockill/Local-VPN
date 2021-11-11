@@ -137,7 +137,7 @@ int attend_paquet(int socket,struct sockaddr* adresse, paquet * buf){
         fd_set sockSet;
         FD_ZERO(&sockSet);
         FD_SET(socket,&sockSet);
-        struct timeval timer = {5,0};
+        struct timeval timer = TIMEOUT;
         if(select(FD_SETSIZE,&sockSet,NULL,NULL,&timer) ==-1){
             tue_moi("select",1,socket);
         }

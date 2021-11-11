@@ -24,6 +24,9 @@
 #define TAILLE_PAQUET 52
 #define TAILLE_DONNEES 44
 #define TAILLE_FENETRE_SERVEUR 5
+#define TAILLE_ADRESSE sizeof(struct sockaddr_in)
+
+#define TIMEOUT {5,0}
 
 
 typedef struct paquet
