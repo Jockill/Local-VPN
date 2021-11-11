@@ -95,27 +95,6 @@ unsigned short negociation_dst(int* sockServer,
         return paquetRecv.numSeq;
 }
 
-
-/*void stop_and_wait_ecoute(struct sockaddr_in* client)
-{
-        //Preconditions
-        if (client == NULL)
-        {
-                fprintf(stderr, "stop_and_wait_ecoute: client NULL.\n");
-                exit(1);
-        }
-
-}*/
-
-/*void go_back_n_ecoute(struct sockaddr_in* client, fenetre* fen)
-{
-        if (client == NULL)
-        {
-                fprintf(stderr, "go_back_n_ecoute: client NULL.\n");
-                exit(1);
-        }
-}*/
-
 void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 	     unsigned short lastSeq)
 {
@@ -169,6 +148,45 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
                 ackRecu=1;
 	}
 }
+
+
+void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
+{
+        //Preconditions
+        if (client == NULL)
+        {
+                fprintf(stderr, "stop_and_wait_ecoute: client NULL.\n");
+                exit(1);
+        }
+        unsigned short lastNumSeq =-1;
+        socklen_t taille = TAILLE_ADRESSE;
+        paquet paquetEnv = {0};
+        paquet paquetRecv = {0};
+        while(paquetRecv.type != FIN){
+                if(recvfrom(socket,&paquetRecv,TAILLE_PAQUET,0,
+                            (struct sockaddr*)client,&taille)==-1){
+                        tue_moi("stop and wait : recv",1,socket);
+                }
+                paquetEnv = cree_paquet(0,ACK,0,paquetRecv.numSeq,0,0,NULL);
+                if(lastNumSeq != paquetRecv.numSeq){
+                        lastNumSeq=paquetRecv.numSeq;
+                        //todo recupere les données et les traiter
+                }
+                envoie_paquet(socket,(struct sockaddr*)client,&paquetEnv);
+        }
+        fin_dst(&socket,client,lastNumSeq);
+        return;
+}
+
+/*void go_back_n_ecoute(struct sockaddr_in* client, fenetre* fen)
+{
+        if (client == NULL)
+        {
+                fprintf(stderr, "go_back_n_ecoute: client NULL.\n");
+                exit(1);
+        }
+}*/
+
 
 int main(int argc, char** argv)
 {

@@ -89,6 +89,46 @@ unsigned short negociation_src(int sockClient,struct sockaddr_in * serveur, int 
     return numA+1;
 }
 
+void stop_and_wait(int socket,struct sockaddr_in * sevreur){
+    unsigned short Seq = 0;
+    int fin = 0;
+    paquet paquetEnv;
+    paquet paquetRecv;
+    
+    while(!fin){
+        paquet paquetEnv= cree_paquet(0,DATA,Seq,0,0,0,NULL);
+        paquet paquetRecv = {0};
+        int ackRecu = 0;
+        while(!ackRecu){
+            if(!envoie_paquet(socket,(struct sockaddr*)sevreur,&paquetEnv)){
+                continue;
+            }
+            if(attend_paquet(socket,(struct sockaddr*)sevreur,&paquetRecv)==0){
+                continue;
+            }
+            if(paquetRecv.type == SYN|ACK){ //mon ACK du handshake c'est perdu
+                paquet finHandShake=cree_paquet(0,ACK,
+                                    paquetRecv.numAck+1,
+                                    paquetRecv.numSeq+1,0,0,NULL);
+                //on renvoie le ACK;
+                envoie_paquet(socket,sevreur,&finHandShake);
+                continue;
+            }else if(paquetRecv.type != ACK || paquetRecv.numAck != Seq){
+                continue;
+            }
+            ackRecu = 1;
+            Seq = (Seq+1)%2;
+        }
+        //mettre une condition d'aret pour fin
+        //envoyer des données a un moment
+    }
+    fin_src(socket,sevreur,Seq);
+    return;
+}
+
+
+
+
 void fin_src(int sockClient,struct sockaddr_in * serveur,unsigned short numSec){
     paquet premierHandShake = cree_paquet(0,FIN,numSec,0,0,0,NULL);
     int numSeqack;

@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#define DATA 0
 #define SYN (1<<0)
 #define FIN (1<<1)
 #define RST (1<<2)
@@ -120,6 +121,7 @@ void affiche_paquet(paquet* paquet);
 */
 int attend_paquet(int socket, struct sockaddr* adresse, paquet * buf);
 
+int envoie_paquet(int socket,struct sockaddr* adresse, paquet * buf);
 
 /******************************************************************************/
 /*********************************** FENETRE **********************************/
