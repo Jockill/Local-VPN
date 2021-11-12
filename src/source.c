@@ -10,6 +10,7 @@
 #include <time.h>
 
 #include "../head/utils.h"
+#include "../head/fifo.h"
 
 void check_args_src(int argc, char** argv){
 
@@ -167,8 +168,13 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,unsigned s
     int fin = 0;
     paquet paquetEnv;
     paquet paquetRecv = {0};
+    unsigned short lastNumAckRecv = 0;
+    int ackDupilque = 0;
 
-    //faire une fifo pour les paquets
+    unsigned short numSeq = premierNumSeq;
+
+    fifo * tampon =  cree_fifo();
+    if(!tampon) tue_moi("creation tampon", 1, socket);
 
     while(!fin){
         unsigned char tailleFenetreReel=
@@ -176,18 +182,56 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,unsigned s
                     fen->tailleCongestion:fen->tailleEnvoi;
         
         for(;PNSU < PNSNA + tailleFenetreReel/52;PNSU++){ // si il reste de la place dans ma fenetre
-            //j'envoie un paquet (que je le stock quelque part);
+            paquet temp = cree_paquet(0,DATA,numSeq,0,0,0,NULL);
+            if(envoie_paquet(socket,(struct sockaddr*)serveur,&temp)==0){
+                PNSU--; //on retry
+                continue;
+            }else if(push_fifo(tampon,&temp) == -1)tue_moi("push fifo",1,socket);
+            //j'envoie un paquet (que je stock quelque part);
         }
 
         if(attend_paquet(socket,(struct sockaddr *)serveur,&paquetRecv)==0){
+            envoi_fifo(tampon,socket,serveur);
+            fen->tailleCongestion /= 2;
+            
             //on a eu une timeout et il faut renvoyer tous les paquets stocker et divisé tailleCongestion par 2
         }else if(paquetRecv.type==ACK){
+            unsigned short firstSeq=premier_fifo(tampon)->element->numAck;
+
+            if(paquetRecv.ecn != 0){
+                fen->tailleCongestion -= (fen->tailleCongestion/10);
+            }
+            
+            if(paquetRecv.numAck==firstSeq){
+                fen->tailleCongestion +=TAILLE_PAQUET;
+            }
+
+            for(;firstSeq>=paquetRecv.numAck;){
+                PNSNA++;
+                pop_fifo(tampon);
+                firstSeq=premier_fifo(tampon)->element->numAck;
+            }
+
+            if(paquetRecv.numAck == lastNumAckRecv){
+                ackDupilque++;
+            }else{
+                lastNumAckRecv = paquetRecv.numAck;
+            }
+            if(ackDupilque == 3){
+                envoi_fifo(tampon,socket,serveur);
+                fen->tailleCongestion = 52;
+                ackDupilque=0;
+            }
+
             //on check le numéro d'acquitement et on valide tous les paquets jusqu'au numAck+1
             //si le numéro d'acquitement est égale au premier seq stocker alors tailleCongestion++
             //si j'ai reçu trois fois le même acquis de suite je fais tailleCongestion = 52
         }
+
+        if(fen->tailleCongestion<52) fen->tailleCongestion=52;
         //mettre une condition d'arete
     }
+    fin_src(socket,serveur,numSeq);
 }
 
 int main(int argc, char** argv){
