@@ -117,17 +117,6 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 	int tmp = 0;
 	int compteur = 0;
 	//Reception FIN TODO -> ça n'a rien n'a foutre ici (la partie reception doit être dans le go back n et stop n wait)
-
-	while ((paquetRecv.type != FIN) || (tmp != 52))
-	{
-		tmp = recvfrom(*sockServer, (void*)&paquetRecv, TAILLE_PAQUET,
-			       0, (struct sockaddr*)addrClient, &lenAddrClient);
-		if (tmp == -1)
-			tue_moi("fin_dst, recvfrom FIN", 1, *sockServer);
-		if (paquetRecv.numSeq != lastSeq)
-			fprintf(stderr, "ATTENTION: Des paquets ont étés perdus avant d'engager la fin de la communication\n");
-	}
-
 	//Envoi ACK + FIN et réception ACK
 	tmp = 0;
 	paquetEnv = cree_paquet(paquetRecv.idFlux, ACK+FIN, 0,
@@ -148,7 +137,6 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
                 ackRecu=1;
 	}
 }
-
 
 void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
 {
@@ -187,7 +175,6 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
         }
 }*/
 
-
 int main(int argc, char** argv)
 {
         check_args_dst(argc, argv);
@@ -213,9 +200,8 @@ int main(int argc, char** argv)
 
         lastSeq = negociation_dst(&sockServeur, &addrClient, &fen, &mode);
 	fprintf(stderr, "Fin negociation.\n");
-	sleep(2);
-	fin_dst(&sockServeur, &addrClient, lastSeq);
-	fprintf(stderr, "Fin.\n");
+	printf("debut stop and wait\n");
+        stop_and_wait_ecoute(sockServeur,&addrClient);
 
         return 0;
 }
