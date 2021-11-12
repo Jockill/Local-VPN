@@ -214,5 +214,5 @@ int main(int argc, char** argv){
     printf("negociation reussite\n");
     sleep(2);
     stop_and_wait(sockClient,&serveur);
-    return;
+    return 0;
 }
