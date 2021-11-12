@@ -175,9 +175,8 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,unsigned s
                     (fen->tailleCongestion<=fen->tailleEnvoi)?
                     fen->tailleCongestion:fen->tailleEnvoi;
         
-        if(PNSU < PNSNA + tailleFenetreReel/52){ // si il reste de la place dans ma fenetre
+        for(;PNSU < PNSNA + tailleFenetreReel/52;PNSU++){ // si il reste de la place dans ma fenetre
             //j'envoie un paquet (que je le stock quelque part);
-            PNSU++;
         }
 
         if(attend_paquet(socket,(struct sockaddr *)serveur,&paquetRecv)==0){
