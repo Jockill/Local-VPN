@@ -1,4 +1,5 @@
 #include "../head/fifo.h"
+#include "../head/utils.h"
 
 fifo* cree_fifo()
 {
