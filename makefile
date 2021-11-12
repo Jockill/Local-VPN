@@ -8,6 +8,9 @@ main: source destination medium
 	@mv *.o -t ./obj
 	#Désolé on a pas trouvé mieux, vpath est facetieux
 
+prof: source destination medium_prof
+	@mv *.o -t ./obj
+
 source: source.c utils.o fifo.o
 	@echo "Construction de source..."
 	@gcc $^ $(FLAGS) -o "source"
