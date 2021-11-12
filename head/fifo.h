@@ -16,7 +16,7 @@ typedef struct fifo
 {
         maillon* debut;
         maillon* fin;
-        ssize_t taille = 0;
+        ssize_t taille;
 } fifo;
 
 
