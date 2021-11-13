@@ -68,7 +68,7 @@ unsigned short negociation_src(int sockClient,struct sockaddr_in * serveur, int 
         }
         affiche_paquet(&premierHandShake);
         if(tmp !=TAILLE_PAQUET) continue; //si on a pas reussi a toute envoyer on renvoie
-        
+
         if(attend_paquet(sockClient,(struct sockaddr *)serveur,&ack) == 0) continue;
         if((ack.type & (SYN|ACK))==0) continue;
         if(ack.numAck != numA+1) continue;
@@ -105,7 +105,7 @@ void fin_src(int sockClient,struct sockaddr_in * serveur,unsigned short numSec){
         if(partiel != TAILLE_PAQUET) continue;
 
         if((attend_paquet(sockClient,(struct sockaddr*)serveur,&ack)==0)
-        || ((ack.type & (FIN|ACK))==0) || (ack.numAck != numSec+1)){ 
+        || ((ack.type & (FIN|ACK))==0) || (ack.numAck != numSec+1)){
             compteur++;
             continue;
         }
@@ -130,7 +130,7 @@ void stop_and_wait(int socket,struct sockaddr_in * sevreur){
     int fin = 0;
     paquet paquetEnv;
     paquet paquetRecv = {0};
-    
+
     while(!fin){
         paquetEnv= cree_paquet(0,DATA,Seq,0,0,0,NULL);
         int ackRecu = 0;
@@ -166,7 +166,7 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,unsigned s
     unsigned short PNSU; //Premier numéro de séquence utilisable
 
     int fin = 0;
-    paquet paquetEnv;
+    // paquet paquetEnv; INUTILISE
     paquet paquetRecv = {0};
     unsigned short lastNumAckRecv = 0;
     int ackDupilque = 0;
@@ -180,7 +180,7 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,unsigned s
         unsigned char tailleFenetreReel=
                     (fen->tailleCongestion<=fen->tailleEnvoi)?
                     fen->tailleCongestion:fen->tailleEnvoi;
-        
+
         for(;PNSU < PNSNA + tailleFenetreReel/52;PNSU++){ // si il reste de la place dans ma fenetre
             paquet temp = cree_paquet(0,DATA,numSeq,0,0,0,NULL);
             if(envoie_paquet(socket,(struct sockaddr*)serveur,&temp)==0){
@@ -193,7 +193,7 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,unsigned s
         if(attend_paquet(socket,(struct sockaddr *)serveur,&paquetRecv)==0){
             envoi_fifo(tampon,socket,serveur);
             fen->tailleCongestion /= 2;
-            
+
             //on a eu une timeout et il faut renvoyer tous les paquets stocker et divisé tailleCongestion par 2
         }else if(paquetRecv.type==ACK){
             unsigned short firstSeq=premier_fifo(tampon)->element->numAck;
@@ -201,9 +201,9 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,unsigned s
             if(paquetRecv.ecn != 0){
                 fen->tailleCongestion -= (fen->tailleCongestion/10);
             }
-            
+
             if(paquetRecv.numAck==firstSeq){
-                fen->tailleCongestion +=TAILLE_PAQUET;
+                fen->tailleCongestion += TAILLE_PAQUET;
             }
 
             for(;firstSeq>=paquetRecv.numAck;){
@@ -252,10 +252,11 @@ int main(int argc, char** argv){
     if(bind(sockClient,(struct sockaddr *)&client,sizeof(client))==-1){
         tue_moi("bind",0);
     }
-    
-    
-    unsigned short premierNumSeq = negociation_src(sockClient,&serveur,mode,&fen)+1; //temporaire
-    printf("negociation reussite\n");
+
+
+    // unsigned short premierNumSeq = negociation_src(sockClient,&serveur,mode,&fen)+1; //temporaire, premierNumSeq inutilise
+    negociation_src(sockClient, &serveur, mode, &fen);
+    printf("negociation reussie\n");
     sleep(2);
     stop_and_wait(sockClient,&serveur);
     return 0;

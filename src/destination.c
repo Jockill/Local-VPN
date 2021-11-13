@@ -95,6 +95,7 @@ unsigned short negociation_dst(int* sockServer,
         return paquetRecv.numSeq;
 }
 
+//Pourquoi sockServer et pas sockClient ?
 void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 	     unsigned short lastSeq)
 {
@@ -111,26 +112,27 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 		exit(1);
 	}
 
-	socklen_t lenAddrClient = sizeof(*addrClient);
 	paquet paquetRecv = {0};
 	paquet paquetEnv = {0};
 	int tmp = 0;
 	int compteur = 0;
+
 	//Reception FIN TODO -> ça n'a rien n'a foutre ici (la partie reception doit être dans le go back n et stop n wait)
 	//Envoi ACK + FIN et réception ACK
 	tmp = 0;
-	paquetEnv = cree_paquet(paquetRecv.idFlux, ACK+FIN, 0,
-                                paquetRecv.numSeq+1, 0, 0, NULL);
+        //idFlux = 0 <=> fin de connexion.
+	paquetEnv = cree_paquet(0, ACK+FIN, 0, lastSeq+1, 0, 0, NULL);
         int ackRecu=0;
-	while (!ackRecu && compteur<5)
+	while ((!ackRecu && compteur<5) && (tmp != 1))
 	{
 		//Envoi ACK+FIN
-		tmp = sendto(*sockServer, (void*)&paquetEnv, TAILLE_PAQUET, 0,
-                            (struct sockaddr*)addrClient, lenAddrClient);
+		tmp = envoie_paquet(*sockServer, (struct sockaddr*) addrClient,
+                                    &paquetEnv);
 
 		//Reception ACK
-                if(attend_paquet(*sockServer,(struct sockaddr*)addrClient,&paquetRecv)==0
-                || paquetRecv.type != ACK){
+                if (attend_paquet(*sockServer, (struct sockaddr*)addrClient,
+                                  &paquetRecv) == 0
+                    || paquetRecv.type != ACK){
                         compteur++;
                         continue;
                 }
@@ -146,10 +148,12 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
                 fprintf(stderr, "stop_and_wait_ecoute: client NULL.\n");
                 exit(1);
         }
+
         unsigned short lastNumSeq =-1;
         socklen_t taille = TAILLE_ADRESSE;
         paquet paquetEnv = {0};
         paquet paquetRecv = {0};
+
         while(paquetRecv.type != FIN){
                 if(recvfrom(socket,&paquetRecv,TAILLE_PAQUET,0,
                             (struct sockaddr*)client,&taille)==-1){
@@ -162,6 +166,7 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
                 }
                 envoie_paquet(socket,(struct sockaddr*)client,&paquetEnv);
         }
+
         fin_dst(&socket,client,lastNumSeq);
         return;
 }
@@ -196,12 +201,11 @@ int main(int argc, char** argv)
         fenetre fen = {0,0,TAILLE_FENETRE_SERVEUR,0};
 	//Misc
 	int mode = 0;
-	unsigned short lastSeq = 0;
 
-        lastSeq = negociation_dst(&sockServeur, &addrClient, &fen, &mode);
+        negociation_dst(&sockServeur, &addrClient, &fen, &mode);
 	fprintf(stderr, "Fin negociation.\n");
 	printf("debut stop and wait\n");
-        stop_and_wait_ecoute(sockServeur,&addrClient);
+        stop_and_wait_ecoute(sockServeur, &addrClient);
 
         return 0;
 }

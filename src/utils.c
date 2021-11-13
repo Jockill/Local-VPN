@@ -137,15 +137,18 @@ int attend_paquet(int socket,struct sockaddr* adresse, paquet * buf){
                 close(socket);
                 exit(1);
         }
+
         socklen_t tailleAdresse= sizeof(*adresse);
         int partiel;
         fd_set sockSet;
         FD_ZERO(&sockSet);
         FD_SET(socket,&sockSet);
         struct timeval timer = TIMEOUT;
-        if(select(FD_SETSIZE,&sockSet,NULL,NULL,&timer) ==-1){
+
+        if(select(FD_SETSIZE,&sockSet,NULL,NULL,&timer) ==-1)
             tue_moi("select",1,socket);
-        }
+
+	//Si il y a eu écriture
         if(FD_ISSET(socket,&sockSet)){
             if((partiel = recvfrom(socket,(void *)buf,
                                    TAILLE_PAQUET,0,
@@ -159,9 +162,9 @@ int attend_paquet(int socket,struct sockaddr* adresse, paquet * buf){
         return 0;
 }
 
-int envoie_paquet(int socket,struct sockaddr* adresse, paquet * buf){
+int envoie_paquet(int socket,struct sockaddr* adresse, paquet* buf){
         if(!adresse){
-                fprintf(stderr,"adresse doit être non null\n");
+                fprintf(stderr,"envoi_paquet: adresse NULL\n");
                 close(socket);
                 exit(1);
         }
@@ -169,7 +172,7 @@ int envoie_paquet(int socket,struct sockaddr* adresse, paquet * buf){
         if((tmp = sendto(socket,buf,TAILLE_PAQUET
                          ,0,adresse,TAILLE_ADRESSE))==-1){
                 tue_moi("sendto",1,socket);
-        
+
         }
         if(tmp!=52){
                 return 0;
