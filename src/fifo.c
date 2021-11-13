@@ -62,7 +62,7 @@ int envoi_fifo(fifo* f, int socket, struct sockaddr_in* dest)
                         fprintf(stderr, "envoi_fifo: La file ne semble pas correctement chainée.\n");
                         return -1;
                 }
-                envoi_paquet(socket, dest, courant);
+                envoie_paquet(socket, (struct sockaddr*)dest, courant->element);
                 courant = courant->suivant;
         }
         return 0;

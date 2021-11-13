@@ -3,13 +3,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "../head/utils.h"
 
-typedef struct maillon
+
+struct maillon
 {
         paquet* element;
-        maillon* precedent;
-        maillon* suivant;
-} maillon;
+        struct maillon* precedent;
+        struct maillon* suivant;
+};
+typedef struct maillon maillon;
 
 
 typedef struct fifo
