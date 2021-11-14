@@ -34,6 +34,8 @@ int est_vide_fifo(fifo* f);
 
 int envoi_fifo(fifo* f, int socket, struct sockaddr_in* dest);
 
+void supprimer_fifo(fifo* f);
+
 void affiche_fifo(fifo* f);
 
 #endif

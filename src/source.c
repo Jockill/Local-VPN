@@ -67,7 +67,7 @@ uint16_t negociation_src(int sockClient,struct sockaddr_in * serveur, int mode, 
             tue_moi("sendto",1,sockClient);
         }
         if(tmp !=TAILLE_PAQUET) continue; //si on a pas reussi a toute envoyer on renvoie
-        
+
         if(attend_paquet(sockClient,(struct sockaddr *)serveur,&ack) == 0) continue;
         if((ack.type & (SYN|ACK))==0) continue;
         if(ack.numAck != numA+1) continue;
@@ -104,7 +104,7 @@ void fin_src(int sockClient,struct sockaddr_in * serveur,uint16_t numSec){
         if(partiel != TAILLE_PAQUET) continue;
 
         if((attend_paquet(sockClient,(struct sockaddr*)serveur,&ack)==0)
-        || ((ack.type & (FIN|ACK))==0) || (ack.numAck != numSec+1)){ 
+        || ((ack.type & (FIN|ACK))==0) || (ack.numAck != numSec+1)){
             compteur++;
             continue;
         }
@@ -129,7 +129,7 @@ void stop_and_wait(int socket,struct sockaddr_in * sevreur){
     int fin = 0;
     paquet paquetEnv;
     paquet paquetRecv = {0};
-    
+
     while(!fin){
         paquetEnv= cree_paquet(0,DATA,Seq,0,0,0,NULL);
         int ackRecu = 0;

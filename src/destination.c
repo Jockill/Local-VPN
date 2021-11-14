@@ -95,6 +95,7 @@ uint16_t negociation_dst(int* sockServer,
         return paquetRecv.numSeq;
 }
 
+//Pourquoi sockServer et pas sockClient ?
 void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 	     uint16_t lastSeq)
 {
@@ -111,16 +112,15 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 		exit(1);
 	}
 
-	socklen_t lenAddrClient = sizeof(*addrClient);
 	paquet paquetRecv = {0};
 	paquet paquetEnv = {0};
 	int compteur = 0;
-	//Reception FIN TODO -> ça n'a rien n'a foutre ici (la partie reception doit être dans le go back n et stop n wait)
+
 	//Envoi ACK + FIN et réception ACK
 	paquetEnv = cree_paquet(paquetRecv.idFlux, ACK+FIN, 0,
                                 paquetRecv.numSeq+1, 0, 0, NULL);
         int ackRecu=0;
-	while (!ackRecu && compteur<5)
+	while ((!ackRecu && compteur<5) && (tmp != 1))
 	{
 		//Envoi ACK+FIN
 		if(sendto(*sockServer, (void*)&paquetEnv, TAILLE_PAQUET, 0,
@@ -129,8 +129,9 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
                 }
 
 		//Reception ACK
-                if(attend_paquet(*sockServer,(struct sockaddr*)addrClient,&paquetRecv)==0
-                || paquetRecv.type != ACK){
+                if (attend_paquet(*sockServer, (struct sockaddr*)addrClient,
+                                  &paquetRecv) == 0
+                    || paquetRecv.type != ACK){
                         compteur++;
                         continue;
                 }
@@ -150,18 +151,24 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
         socklen_t taille = TAILLE_ADRESSE;
         paquet paquetEnv = {0};
         paquet paquetRecv = {0};
+
         while(paquetRecv.type != FIN){
                 if(recvfrom(socket,&paquetRecv,TAILLE_PAQUET,0,
                             (struct sockaddr*)client,&taille)==-1){
-                        tue_moi("stop and wait : recv",1,socket);
+                        tue_moi("stop and wait dest: recv",1,socket);
                 }
                 paquetEnv = cree_paquet(0,ACK,0,paquetRecv.numSeq,0,0,NULL);
-                if(lastNumSeq != paquetRecv.numSeq){
+                //Les numeros de sequence sont des 0 et des 1 alternés
+                //Donc le dernier numero doit être l'inverse binaire du suivant
+                if(lastNumSeq == (!paquetRecv.numSeq)){
                         lastNumSeq=paquetRecv.numSeq;
                         //todo recupere les données et les traiter
                 }
                 envoie_paquet(socket,(struct sockaddr*)client,&paquetEnv);
         }
+
+        //TODO Reconstituer les flux
+
         fin_dst(&socket,client,lastNumSeq);
         return;
 }
@@ -221,7 +228,7 @@ int main(int argc, char** argv)
 	int mode = 0;
 	uint16_t lastSeq = 0;
 
-        lastSeq = negociation_dst(&sockServeur, &addrClient, &fen, &mode);
+        negociation_dst(&sockServeur, &addrClient, &fen, &mode);
 	fprintf(stderr, "Fin negociation.\n");
 	printf("debut go back n\n");
         go_back_n_ecoute(sockServeur,&addrClient,lastSeq);

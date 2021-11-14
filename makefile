@@ -6,7 +6,7 @@ vpath %.o obj/
 
 main: source destination medium
 	@mv *.o -t ./obj
-	#Désolé on a pas trouvé mieux, vpath est facetieux
+	@#Désolé on a pas trouvé mieux, vpath est facetieux
 
 prof: source destination medium_prof
 	@mv *.o -t ./obj
