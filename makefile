@@ -21,6 +21,9 @@ destination: destination.c utils.o fifo.o
 	gcc $^ $(FLAGS) -o "destination"
 	@echo "Destination construite!"
 
+multi: multi.c utils.o fifo.o
+	gcc $^ $(FLAGS) -o "multi"
+
 obj/%.o: %.c %.h
 	@mkdir -p obj/
 	@gcc $(FLAGS) -c $< -o $@
