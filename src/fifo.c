@@ -68,6 +68,14 @@ int envoi_fifo(fifo* f, int socket, struct sockaddr_in* dest)
         return 0;
 }
 
+void supprimer_fifo(fifo* f)
+{
+        while (f->taille > 0)
+                pop_fifo(f);
+
+        free(f);
+}
+
 void affiche_fifo(fifo* f)
 {
         printf("============= FILE ============\n");
