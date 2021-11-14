@@ -32,12 +32,6 @@ char* flux_to_str(flux* flux)
 
 flux* creer_flux(unsigned char idFlux, char* donnee)
 {
-        //Probleme car idFlux sert d'index au tableau de flux.
-        if (idFlux < 0)
-        {
-                fprintf(stderr, "creer_flux: idFlux < 0\n");
-                exit(1);
-        }
         if (donnee == NULL)
         {
                 fprintf(stderr, "creer_flux: donnee NULL\n");
