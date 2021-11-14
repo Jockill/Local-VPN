@@ -5,3 +5,5 @@ doc*
 *.py
 destination
 source
+multi
+*.o
