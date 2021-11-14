@@ -225,9 +225,7 @@ int main(int argc, char** argv)
         fenetre fen = {0,0,TAILLE_FENETRE_SERVEUR,0};
 	//Misc
 	int mode = 0;
-	uint16_t lastSeq = 0;
-
-        negociation_dst(&sockServeur, &addrClient, &fen, &mode);
+	uint16_t lastSeq = negociation_dst(&sockServeur, &addrClient, &fen, &mode);
 	fprintf(stderr, "Fin negociation.\n");
 	printf("debut go back n\n");
         go_back_n_ecoute(sockServeur,&addrClient,lastSeq);
