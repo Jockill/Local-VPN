@@ -117,7 +117,6 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 	int tmp = 0;
 	int compteur = 0;
 
-	//Reception FIN TODO -> ça n'a rien n'a foutre ici (la partie reception doit être dans le go back n et stop n wait)
 	//Envoi ACK + FIN et réception ACK
 	tmp = 0;
         //idFlux = 0 <=> fin de connexion.
@@ -157,15 +156,19 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
         while(paquetRecv.type != FIN){
                 if(recvfrom(socket,&paquetRecv,TAILLE_PAQUET,0,
                             (struct sockaddr*)client,&taille)==-1){
-                        tue_moi("stop and wait : recv",1,socket);
+                        tue_moi("stop and wait dest: recv",1,socket);
                 }
                 paquetEnv = cree_paquet(0,ACK,0,paquetRecv.numSeq,0,0,NULL);
-                if(lastNumSeq != paquetRecv.numSeq){
+                //Les numeros de sequence sont des 0 et des 1 alternés
+                //Donc le dernier numero doit être l'inverse binaire du suivant
+                if(lastNumSeq == (!paquetRecv.numSeq)){
                         lastNumSeq=paquetRecv.numSeq;
                         //todo recupere les données et les traiter
                 }
                 envoie_paquet(socket,(struct sockaddr*)client,&paquetEnv);
         }
+
+        //TODO Reconstituer les flux
 
         fin_dst(&socket,client,lastNumSeq);
         return;
@@ -204,7 +207,6 @@ int main(int argc, char** argv)
 
         negociation_dst(&sockServeur, &addrClient, &fen, &mode);
 	fprintf(stderr, "Fin negociation.\n");
-	printf("debut stop and wait\n");
         stop_and_wait_ecoute(sockServeur, &addrClient);
 
         return 0;
