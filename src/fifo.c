@@ -1,5 +1,4 @@
 #include "../head/fifo.h"
-#include "../head/utils.h"
 
 fifo* cree_fifo()
 {
@@ -29,25 +28,24 @@ int push_fifo(fifo* f, paquet* p)
         if (f->taille == 0)
                 f->debut = new;
         f->fin = new;
-        (f->taille)++;
+        f->taille+=1;
         return 0;
 }
 
 maillon* premier_fifo(fifo* f) {return f->debut;}
 
-maillon* pop_fifo(fifo* f)
+paquet* pop_fifo(fifo* f)
 {
         maillon* tete = f->debut;
         maillon* nouveauDebut = f->debut->suivant;
 
-        printf("nouvD = %p\n", nouveauDebut);
-
         f->debut = nouveauDebut;
-        (f->taille)--;
+        f->taille -= 1;
         if (f->taille == 0)
                 f->fin = NULL;
-
-        return tete;
+        paquet * res = tete->element;
+        free(tete);
+        return res;
 }
 
 int est_vide_fifo(fifo* f) {return f->taille>0 ? 1:0;}
@@ -62,17 +60,23 @@ int envoi_fifo(fifo* f, int socket, struct sockaddr_in* dest)
                         fprintf(stderr, "envoi_fifo: La file ne semble pas correctement chainée.\n");
                         return -1;
                 }
-                envoi_paquet(socket, dest, courant);
+                envoie_paquet(socket,(struct sockaddr*)dest, courant->element);
                 courant = courant->suivant;
         }
         return 0;
 }
 
 void affiche_fifo(fifo* f)
-{
+{       
         printf("============= FILE ============\n");
-        printf("Debut : %p\n", f->debut);
-        printf("Fin:    %p\n", f->fin);
+        maillon* tmp = f->debut;
+        int compteur = 0;
+        while(tmp != NULL){
+                printf("Paquet : %hu\n",tmp->element->numSeq);
+                tmp = tmp->suivant;
+                compteur++;
+        }
+        printf("Taille reel: %d\n", compteur);
         printf("Taille: %ld\n", f->taille);
         printf("===============================\n");
 }

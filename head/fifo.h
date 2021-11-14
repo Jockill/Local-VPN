@@ -3,12 +3,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "../head/utils.h"
+
 
 typedef struct maillon
 {
         paquet* element;
-        maillon* precedent;
-        maillon* suivant;
+        struct maillon* precedent;
+        struct maillon* suivant;
 } maillon;
 
 
@@ -26,7 +28,7 @@ int push_fifo(fifo* f, paquet* p);
 
 maillon* premier_fifo(fifo* f);
 
-maillon* pop_fifo(fifo* f);
+paquet* pop_fifo(fifo* f);
 
 int est_vide_fifo(fifo* f);
 

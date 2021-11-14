@@ -36,7 +36,7 @@ void check_args_dst(int argc, char** argv)
 
 //Pour pouvoir gérer le multiflux, il faudra utiliser FD_SET et jouer avec les
 //fd pour savoir quel flux est pret.
-unsigned short negociation_dst(int* sockServer,
+uint16_t negociation_dst(int* sockServer,
                     struct sockaddr_in* addrClient, fenetre* fen, int* mode)
 {
         //Preconditions
@@ -52,7 +52,7 @@ unsigned short negociation_dst(int* sockServer,
 		exit(1);
 	}
 
-        unsigned short randAck =(unsigned short) rand();
+        uint16_t randAck =(uint16_t) rand();
         paquet paquetEnv = {0};
         paquet paquetRecv= {0};
         ssize_t tmp = 0;
@@ -96,7 +96,7 @@ unsigned short negociation_dst(int* sockServer,
 }
 
 void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
-	     unsigned short lastSeq)
+	     uint16_t lastSeq)
 {
 	//Preconditions
 	if ((sockServer == NULL) || (*sockServer < 0))
@@ -114,19 +114,19 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 	socklen_t lenAddrClient = sizeof(*addrClient);
 	paquet paquetRecv = {0};
 	paquet paquetEnv = {0};
-	int tmp = 0;
 	int compteur = 0;
 	//Reception FIN TODO -> ça n'a rien n'a foutre ici (la partie reception doit être dans le go back n et stop n wait)
 	//Envoi ACK + FIN et réception ACK
-	tmp = 0;
 	paquetEnv = cree_paquet(paquetRecv.idFlux, ACK+FIN, 0,
                                 paquetRecv.numSeq+1, 0, 0, NULL);
         int ackRecu=0;
 	while (!ackRecu && compteur<5)
 	{
 		//Envoi ACK+FIN
-		tmp = sendto(*sockServer, (void*)&paquetEnv, TAILLE_PAQUET, 0,
-                            (struct sockaddr*)addrClient, lenAddrClient);
+		if(sendto(*sockServer, (void*)&paquetEnv, TAILLE_PAQUET, 0,
+                            (struct sockaddr*)addrClient, lenAddrClient)==-1){
+                        tue_moi("sendto",1,sockServer);
+                }
 
 		//Reception ACK
                 if(attend_paquet(*sockServer,(struct sockaddr*)addrClient,&paquetRecv)==0
@@ -146,7 +146,7 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
                 fprintf(stderr, "stop_and_wait_ecoute: client NULL.\n");
                 exit(1);
         }
-        unsigned short lastNumSeq =-1;
+        uint16_t lastNumSeq =-1;
         socklen_t taille = TAILLE_ADRESSE;
         paquet paquetEnv = {0};
         paquet paquetRecv = {0};
@@ -166,14 +166,37 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
         return;
 }
 
-/*void go_back_n_ecoute(struct sockaddr_in* client, fenetre* fen)
+void go_back_n_ecoute(int socket,struct sockaddr_in* client,uint16_t premierNumSeq)
 {
         if (client == NULL)
         {
                 fprintf(stderr, "go_back_n_ecoute: client NULL.\n");
                 exit(1);
         }
-}*/
+        socklen_t taille = TAILLE_ADRESSE;
+        paquet paquetEnv;
+        paquet paquetRecv = {0};
+
+        uint16_t nextNumSeq = premierNumSeq;
+
+        while(paquetRecv.type != FIN){
+                if(recvfrom(socket,&paquetRecv,TAILLE_PAQUET,0,
+                            (struct sockaddr*)client,&taille)==-1){
+                        tue_moi("stop and wait : recv",1,socket);
+                }
+                affiche_paquet(&paquetRecv);
+                printf("j'avais besoin de %hu\n",nextNumSeq);
+                if((nextNumSeq) == paquetRecv.numSeq){
+                        nextNumSeq = (nextNumSeq+1);
+                        //todo recupere les données et les traiter
+                }
+                paquetEnv = cree_paquet(0,ACK,0,nextNumSeq,0,paquetRecv.ecn,NULL);
+                printf("j'envoie : \n");
+                affiche_paquet(&paquetEnv);
+                envoie_paquet(socket,(struct sockaddr*)client,&paquetEnv);
+        }
+        fin_dst(&socket,client,nextNumSeq);
+}
 
 int main(int argc, char** argv)
 {
@@ -196,12 +219,12 @@ int main(int argc, char** argv)
         fenetre fen = {0,0,TAILLE_FENETRE_SERVEUR,0};
 	//Misc
 	int mode = 0;
-	unsigned short lastSeq = 0;
+	uint16_t lastSeq = 0;
 
         lastSeq = negociation_dst(&sockServeur, &addrClient, &fen, &mode);
 	fprintf(stderr, "Fin negociation.\n");
-	printf("debut stop and wait\n");
-        stop_and_wait_ecoute(sockServeur,&addrClient);
+	printf("debut go back n\n");
+        go_back_n_ecoute(sockServeur,&addrClient,lastSeq);
 
         return 0;
 }

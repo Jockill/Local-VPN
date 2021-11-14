@@ -81,7 +81,7 @@ int ipv4_valide(char* ip){
 /******************************************************************************/
 
 paquet cree_paquet(unsigned char idFlux, unsigned char type,
-                  unsigned short numSeq, unsigned short numAck,
+                  uint16_t numSeq, uint16_t numAck,
                   unsigned char ecn, unsigned char tailleFenetre,
                   char* donnees)
 {
@@ -100,6 +100,30 @@ paquet cree_paquet(unsigned char idFlux, unsigned char type,
                                             // ne terminera pas par le char sentinel
         }else{
                 paquet.donnees[0]='\0';
+        }
+        return paquet;
+}
+
+paquet *cree_paquet_gbn(unsigned char idFlux, unsigned char type,
+                  uint16_t numSeq, uint16_t numAck,
+                  unsigned char ecn, unsigned char tailleFenetre,
+                  char* donnees)
+{
+        paquet * paquet = malloc(sizeof(paquet));
+        paquet->idFlux = idFlux;
+        paquet->type = type;
+        paquet->numSeq = numSeq;
+        paquet->numAck = numAck;
+        paquet->ecn = ecn;
+        paquet->tailleFenetre = tailleFenetre;
+        if(donnees!=NULL){
+                if (strlen(donnees) > 44)
+                fprintf(stderr, "Attention, les donnees ont ete tronquees.\n");
+
+                strncpy(paquet->donnees,donnees,44); // attention si le 44ième octets n'est pas un '\0' alors le string
+                                            // ne terminera pas par le char sentinel
+        }else{
+                paquet->donnees[0]='\0';
         }
         return paquet;
 }

@@ -27,15 +27,15 @@
 #define TAILLE_FENETRE_SERVEUR 5
 #define TAILLE_ADRESSE sizeof(struct sockaddr_in)
 
-#define TIMEOUT {5,0}
+#define TIMEOUT {0,10}
 
 
 typedef struct paquet
 { //utiliser _uint ? ==> mieux représenter l'intention.
     unsigned char idFlux;
     unsigned char type;
-    unsigned short numSeq;
-    unsigned short numAck;
+    uint16_t numSeq;
+    uint16_t numAck;
     unsigned char ecn;
     unsigned char tailleFenetre; //en nombre d'octets
     char donnees[TAILLE_DONNEES];
@@ -47,9 +47,9 @@ typedef struct fenetre
     unsigned int fin;
     //Taille de la fenetre d'envoi en nombre de paquets, identique a la taille
     //de la fenetre de reception
-    unsigned char tailleEnvoi;
+    unsigned int tailleEnvoi;
     //Taille de la fenetre de congestion en nombre de paquets
-    unsigned char tailleCongestion;
+    unsigned int tailleCongestion;
 } fenetre;
 
 
@@ -92,8 +92,8 @@ int ipv4_valide(char* ip);
   \brief Crée, initialise et renvoie un paquet à l'aide des arguments.
   \param unsigned char idFlux ID du flux ayant généré le paquet.
   \param unsigned char type Type de paquet (SYN, FIN, RST, ACK supportés)
-  \param unsigned short numSeq Numéro de séquence
-  \param unsigned short numAck Numéro d'acquittement
+  \param uint16_t numSeq Numéro de séquence
+  \param uint16_t numAck Numéro d'acquittement
   \param unsigned char ecn Bit de controle de congestion
   \param unsigned char tailleFenetre Taille de la fenetre de l'envoyeur au \
   moment de la création du paquet.
@@ -101,7 +101,12 @@ int ipv4_valide(char* ip);
   \note Si `donnees` est plus grand que TAILLE_DONNEES, le tableau sera tronqué
 */
 paquet cree_paquet(unsigned char idFlux, unsigned char type,
-                  unsigned short numSeq, unsigned short numAck,
+                  uint16_t numSeq, uint16_t numAck,
+                  unsigned char ecn, unsigned char tailleFenetre,
+                  char* donnees);
+
+paquet *cree_paquet_gbn(unsigned char idFlux, unsigned char type,
+                  uint16_t numSeq, uint16_t numAck,
                   unsigned char ecn, unsigned char tailleFenetre,
                   char* donnees);
 
