@@ -111,7 +111,6 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 		close(*sockServer);
 		exit(1);
 	}
-
 	paquet paquetRecv = {0};
 	paquet paquetEnv = {0};
 	int compteur = 0;
@@ -120,11 +119,11 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 	paquetEnv = cree_paquet(paquetRecv.idFlux, ACK+FIN, 0,
                                 paquetRecv.numSeq+1, 0, 0, NULL);
         int ackRecu=0;
-	while ((!ackRecu && compteur<5) && (tmp != 1))
+	while ((!ackRecu && compteur<5))
 	{
 		//Envoi ACK+FIN
 		if(sendto(*sockServer, (void*)&paquetEnv, TAILLE_PAQUET, 0,
-                            (struct sockaddr*)addrClient, lenAddrClient)==-1){
+                            (struct sockaddr*)addrClient, TAILLE_ADRESSE)==-1){
                         tue_moi("sendto",1,sockServer);
                 }
 
