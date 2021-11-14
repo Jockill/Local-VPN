@@ -9,6 +9,12 @@ typedef struct fifo flux;
 
 char* flux_to_str(flux* flux)
 {
+        if (flux == NULL)
+        {
+                fprintf(stderr, "flux_to_str: flux NULL\n");
+                exit(1);
+        }
+
         ssize_t taille = flux->taille;
         maillon* courant = flux->debut;
         int strPos = 0;
@@ -19,8 +25,6 @@ char* flux_to_str(flux* flux)
                 for (ssize_t j=0; j<TAILLE_DONNEES; j++)
                         str[strPos++] = courant->element->donnees[j];
                 courant = courant->suivant;
-
-                printf("\t%s\n", str);
         }
 
         return str;
@@ -28,6 +32,18 @@ char* flux_to_str(flux* flux)
 
 flux* creer_flux(unsigned char idFlux, char* donnee)
 {
+        //Probleme car idFlux sert d'index au tableau de flux.
+        if (idFlux < 0)
+        {
+                fprintf(stderr, "creer_flux: idFlux < 0\n");
+                exit(1);
+        }
+        if (donnee == NULL)
+        {
+                fprintf(stderr, "creer_flux: donnee NULL\n");
+                exit(1);
+        }
+
         int tailleDonnee = strlen(donnee);
         int nbrPaquets = 0;
         int donnePos = 0;
