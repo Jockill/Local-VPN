@@ -94,7 +94,7 @@ paquet cree_paquet(unsigned char idFlux, unsigned char type,
         paquet.tailleFenetre = tailleFenetre;
         if(donnees!=NULL){
                 if (strlen(donnees) > 44)
-                fprintf(stderr, "Attention, les donnees ont ete tronquees.\n");
+                        fprintf(stderr, "Attention, les donnees ont ete tronquees.\n");
 
                 strncpy(paquet.donnees,donnees,44); // attention si le 44ième octets n'est pas un '\0' alors le string
                                             // ne terminera pas par le char sentinel
@@ -109,7 +109,7 @@ paquet *cree_paquet_gbn(unsigned char idFlux, unsigned char type,
                   unsigned char ecn, unsigned char tailleFenetre,
                   char* donnees)
 {
-        paquet * paquet = malloc(sizeof(paquet));
+        paquet * paquet = malloc(TAILLE_PAQUET);
         paquet->idFlux = idFlux;
         paquet->type = type;
         paquet->numSeq = numSeq;

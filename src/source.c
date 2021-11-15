@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "../head/utils.h"
 #include "../head/fifo.h"
@@ -124,6 +126,7 @@ void fin_src(int sockClient,struct sockaddr_in * serveur,uint16_t numSec){
     return;
 }
 
+
 void stop_and_wait(int socket,struct sockaddr_in * sevreur){
     uint16_t Seq = 0;
     int fin = 0;
@@ -169,6 +172,14 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
     paquet paquetRecv = {0};
     uint16_t lastNumAckRecv = 0;
     int ackDupilque = 0;
+    int strPos = 0;
+
+    int fichier = open("./src/source.c",O_RDONLY);
+    char * buf;
+    if(fichier == -1){
+        perror("fichier");
+        exit(1);
+    }
 
     fifo * tampon = cree_fifo();
     if(!tampon) tue_moi("creation tampon", 1, socket);
@@ -183,7 +194,12 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
         printf("taille fenetre effective : %d\n",tailleFenetreReel);
 
         for(;PNSU< ((uint16_t) (PNSNA + (uint16_t) (tailleFenetreReel/52)));PNSU++){ // si il reste de la place dans ma fenetre
-            paquetEnv = cree_paquet_gbn(0,DATA,PNSU,0,0,0,NULL);
+
+            if(read(fichier,buf,TAILLE_DONNEES-1)==-1){
+                perror("read");
+                exit(1);
+            }
+            paquetEnv = cree_paquet_gbn(0,DATA,PNSU,0,0,0,buf);
 
             if(envoie_paquet(socket,(struct sockaddr*)serveur,paquetEnv)==0){
                 tue_moi("envoie_paquet",1,socket);
@@ -238,6 +254,7 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
     }
     fin_src(socket,serveur,PNSNA);
 }
+
 
 int main(int argc, char** argv){
     check_args_src(argc,argv);
