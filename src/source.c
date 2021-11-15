@@ -45,7 +45,7 @@ void check_args_src(int argc, char** argv){
     return;
 }
 
-uint16_t negociation_src(int sockClient,struct sockaddr_in * serveur, int mode, fenetre* fen){
+uint16_t negociation_src(int sockClient,struct sockaddr_in * serveur, int mode, fenetre * fen){
     uint16_t numA =(uint16_t) rand();
     uint16_t numB;
     ssize_t tmp;
@@ -165,51 +165,54 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
     uint16_t PNSU = premierNumSeq; //Premier numéro de séquence utilisable
 
     int fin = 0;
-    paquet *paquetEnv;
+    paquet * paquetEnv;
     paquet paquetRecv = {0};
     uint16_t lastNumAckRecv = 0;
     int ackDupilque = 0;
 
-    fifo * tampon =  cree_fifo();
+    fifo * tampon = cree_fifo();
     if(!tampon) tue_moi("creation tampon", 1, socket);
-    fen->tailleCongestion = 52;
+    fen->tailleCongestion = TAILLE_PAQUET;
 
-    while(!fin){
+    while(!fin){ 
+        //taille envoie est récuperé pendant l'handshake depusi la destination
         unsigned int tailleFenetreReel=
                     (fen->tailleCongestion<=fen->tailleEnvoi)?
                     fen->tailleCongestion:fen->tailleEnvoi;
+        
         printf("taille fenetre effective : %d\n",tailleFenetreReel);
+
         for(;PNSU< ((uint16_t) (PNSNA + (uint16_t) (tailleFenetreReel/52)));PNSU++){ // si il reste de la place dans ma fenetre
             paquetEnv = cree_paquet_gbn(0,DATA,PNSU,0,0,0,NULL);
+
             if(envoie_paquet(socket,(struct sockaddr*)serveur,paquetEnv)==0){
                 tue_moi("envoie_paquet",1,socket);
-            }else if(push_fifo(tampon,paquetEnv) == -1)tue_moi("push fifo",1,socket);
+            }else if(push_fifo(tampon,paquetEnv) == -1)
+                tue_moi("push fifo",1,socket);
             //j'envoie un paquet (que je stock quelque part);
         }
         affiche_fifo(tampon);
         printf("PNSU : %hu,PNSNA : %hu\n",PNSU,PNSNA);
 
+        //on a eu une timeout et il faut renvoyer tous les paquets stocker et divisé tailleCongestion par 2
         if(attend_paquet(socket,(struct sockaddr *)serveur,&paquetRecv)==0){
             fen->tailleCongestion /= 2;
             envoi_fifo(tampon,socket,serveur);
 
-            //on a eu une timeout et il faut renvoyer tous les paquets stocker et divisé tailleCongestion par 2
         }else if(paquetRecv.type==ACK){
 
             if(paquetRecv.ecn > 0){
                 fen->tailleCongestion -= (fen->tailleCongestion/10);
             } // si le bit ECN est pas 0 la taille de la FC perd 10%
 
+            printf("numéro de ack recu %hu\n",paquetRecv.numAck);
             if(paquetRecv.numAck==PNSNA+1){
                 fen->tailleCongestion +=TAILLE_PAQUET;
                 free(pop_fifo(tampon));
                 PNSNA++;
-                printf("test,1 2, test");
                 continue;
             } // si on a reçu un acquitement en séquence on rajoute un paquet
-            printf("numéro de ack recu %hu\n",paquetRecv.numAck);
             for(;PNSNA<paquetRecv.numAck;PNSNA++){
-                printf("test\n");
                 free(pop_fifo(tampon));
             } // acquiter tous les paquets 
 
@@ -222,7 +225,7 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
             if(ackDupilque == 3){
                 printf("ack dupiqué\n");
                 envoi_fifo(tampon,socket,serveur);
-                fen->tailleCongestion = 52;
+                fen->tailleCongestion = TAILLE_PAQUET;
                 ackDupilque=0;
             }
             //on check le numéro d'acquitement et on valide tous les paquets jusqu'au numAck+1
@@ -230,7 +233,7 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
             //si j'ai reçu trois fois le même acquis de suite je fais tailleCongestion = 52
         }
 
-        if(fen->tailleCongestion<52) fen->tailleCongestion=52;
+        if(fen->tailleCongestion<TAILLE_PAQUET) fen->tailleCongestion=TAILLE_PAQUET;
         //mettre une condition d'arete
     }
     fin_src(socket,serveur,PNSNA);
