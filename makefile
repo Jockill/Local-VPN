@@ -14,7 +14,7 @@ source: source.c utils.o fifo.o
 
 destination: destination.c utils.o fifo.o
 	@echo "Construction de destination..."
-	gcc src/destination.c obj/utils.o obj/fifo.o $(FLAGS) -o "destination"
+	@gcc src/destination.c obj/utils.o obj/fifo.o $(FLAGS) -o "destination"
 	@echo "Destination construite!"
 
 %.o: %.c %.h
