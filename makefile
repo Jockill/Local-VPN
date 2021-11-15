@@ -7,14 +7,14 @@ main: source destination medium
 
 prof: source destination medium_prof
 
-source: source.c obj/utils.o obj/fifo.o
+source: source.c utils.o fifo.o
 	@echo "Construction de source..."
-	@gcc $^ $(FLAGS) -o "source"
+	@gcc src/source.c obj/utils.o obj/fifo.o $(FLAGS) -o "source"
 	@echo "Source construite!"
 
-destination: destination.c obj/utils.o obj/fifo.o
+destination: destination.c utils.o fifo.o
 	@echo "Construction de destination..."
-	gcc $^ $(FLAGS) -o "destination"
+	gcc src/destination.c obj/utils.o obj/fifo.o $(FLAGS) -o "destination"
 	@echo "Destination construite!"
 
 %.o: %.c %.h
