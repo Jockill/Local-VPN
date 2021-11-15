@@ -174,14 +174,14 @@ int attend_paquet(int socket,struct sockaddr* adresse, paquet * buf){
 
 	//Si il y a eu écriture
         if(FD_ISSET(socket,&sockSet)){
-            if((partiel = recvfrom(socket,(void *)buf,
+                if((partiel = recvfrom(socket,(void *)buf,
                                    TAILLE_PAQUET,0,
                                    (struct sockaddr*)adresse,
                                    &tailleAdresse))==-1){
                 tue_moi("recvfrom",1,socket);
-            }
-            if(partiel!=52) return 0;
-            return 1;
+        }
+        if(partiel!=TAILLE_PAQUET) return 0;
+        return 1;
         }
         return 0;
 }
