@@ -1,4 +1,6 @@
 *.pdf
+*.txt
+rendu/*
 obj*
 doc*
 *.tar*
