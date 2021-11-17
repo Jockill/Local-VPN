@@ -14,7 +14,7 @@
 #include "../head/utils.h"
 #include "../head/fifo.h"
 
-void check_args_src(int argc, char** argv){
+int check_args_src(int argc, char** argv){
 
     if(argc < 5){
         fprintf(stderr,"Erreur : Argument manquant.\n");
@@ -30,12 +30,6 @@ void check_args_src(int argc, char** argv){
         fprintf(stderr,"Rappel Format IPV4 : xxx.xxx.xxx.xxx .\n");
         exit(1);
     }
-    int mode = strtol(argv[1],NULL,0);
-    if(mode != STOP_N_WAIT && mode != GO_BACK_N){
-        fprintf(stderr,"Erreur : mode non valide.\n");
-        fprintf(stderr,"Rappel mode : 1=\'stop and wait\', 2=\'go back n\'.\n");
-        exit(1);
-    }
     for(int i = 3; i<=4;i++){
         int testPort = strtol(argv[i],NULL,0);
         if(testPort <2049 || testPort> 49151){
@@ -44,7 +38,18 @@ void check_args_src(int argc, char** argv){
             exit(1);
         }
     }
-    return;
+    int mode = strtol(argv[1], NULL, 0);
+    if (mode == GO_BACK_N || mode == STOP_N_WAIT)
+    	return mode;
+
+    if (strncmp(argv[1], "stop-wait", 10) == 0)
+    	return STOP_N_WAIT;
+    if (strncmp(argv[1], "go-back-n", 10) == 0)
+    	return GO_BACK_N;
+
+    fprintf(stderr,"Erreur : mode non valide.\n");
+    fprintf(stderr,"Rappel mode : <stop-wait> ou <go-back-n>.\n");
+    exit(1);
 }
 
 uint16_t negociation_src(int sockClient,struct sockaddr_in * serveur, int mode, fenetre * fen){
