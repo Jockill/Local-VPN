@@ -1,21 +1,24 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 #include "../head/utils.h"
 
+
 void check_args_dst(int argc, char** argv)
 {
     if(argc < 4){
         fprintf(stderr,"Erreur : Argument manquant.\n");
-        fprintf(stderr,"Syntaxe attendu : ./%s <IP_distante> <port_local> <port_ecoute_dst_pertubateur>\n", argv[0]);
+        fprintf(stderr,"Syntaxe attendu : %s <IP_distante> <port_local> <port_ecoute_dst_pertubateur>\n", argv[0]);
         exit(1);
     } else if(argc > 4){
         fprintf(stderr,"Erreur : Trop d'argument.\n");
-        fprintf(stderr,"Syntaxe attendu : ./%s <IP_distante> <port_local> <port_ecoute_dst_pertubateur>\n", argv[0]);
+        fprintf(stderr,"Syntaxe attendu : %s <IP_distante> <port_local> <port_ecoute_dst_pertubateur>\n", argv[0]);
         exit(1);
     }
     if(!ipv4_valide(argv[1])){
@@ -95,22 +98,22 @@ uint16_t negociation_dst(int* sockServer,
         return paquetRecv.numSeq;
 }
 
-//Pourquoi sockServer et pas sockClient ?
-void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
+void fin_dst(int* sockClient, struct sockaddr_in* addrClient,
 	     uint16_t lastSeq)
 {
 	//Preconditions
-	if ((sockServer == NULL) || (*sockServer < 0))
+	if ((sockClient == NULL) || (*sockClient < 0))
 	{
-		fprintf(stderr, "fin_dst: sockServer 0\n");
+		fprintf(stderr, "fin_dst: sockClient 0\n");
 		exit(1);
 	}
 	if (addrClient == NULL)
 	{
 		fprintf(stderr, "fin_dst: addrClient NULL\n");
-		close(*sockServer);
+		close(*sockClient);
 		exit(1);
 	}
+
 	paquet paquetRecv = {0};
 	paquet paquetEnv = {0};
 	int compteur = 0;
@@ -122,13 +125,13 @@ void fin_dst(int* sockServer, struct sockaddr_in* addrClient,
 	while ((!ackRecu && compteur<5))
 	{
 		//Envoi ACK+FIN
-		if(sendto(*sockServer, (void*)&paquetEnv, TAILLE_PAQUET, 0,
+		if(sendto(*sockClient, (void*)&paquetEnv, TAILLE_PAQUET, 0,
                             (struct sockaddr*)addrClient, TAILLE_ADRESSE)==-1){
-                        tue_moi("sendto",1,sockServer);
+                        tue_moi("sendto",1,sockClient);
                 }
 
 		//Reception ACK
-                if (attend_paquet(*sockServer, (struct sockaddr*)addrClient,
+                if (attend_paquet(*sockClient, (struct sockaddr*)addrClient,
                                   &paquetRecv) == 0
                     || paquetRecv.type != ACK){
                         compteur++;
@@ -146,23 +149,39 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
                 fprintf(stderr, "stop_and_wait_ecoute: client NULL.\n");
                 exit(1);
         }
+
         uint16_t lastNumSeq =-1;
         socklen_t taille = TAILLE_ADRESSE;
         paquet paquetEnv = {0};
         paquet paquetRecv = {0};
+	int fichier = open("onChangeraPlusTard.txt", O_CREAT|O_RDWR|O_TRUNC, 0666);
+	if (fichier == -1)
+		tue_moi("stop_and_wait_ecoute: open", 1, socket);
 
         while(paquetRecv.type != FIN){
+
+		// TODO selectionner flux
+
                 if(recvfrom(socket,&paquetRecv,TAILLE_PAQUET,0,
                             (struct sockaddr*)client,&taille)==-1){
                         tue_moi("stop and wait dest: recv",1,socket);
                 }
-                paquetEnv = cree_paquet(0,ACK,0,paquetRecv.numSeq,0,0,NULL);
                 //Les numeros de sequence sont des 0 et des 1 alternés
                 //Donc le dernier numero doit être l'inverse binaire du suivant
-                if(lastNumSeq == (!paquetRecv.numSeq)){
+                if(lastNumSeq != paquetRecv.numSeq)
+		{
+
                         lastNumSeq=paquetRecv.numSeq;
-                        //todo recupere les données et les traiter
+			//Pas tres beau mais évite de faire plusieurs appels
+			int len = strlen(paquetRecv.donnees);
+			if (len > TAILLE_DONNEES)
+				len = TAILLE_DONNEES;
+
+			if (write(fichier, paquetRecv.donnees, len) == -1)
+				tue_moi("go_back_n_ecoute, write", 2, socket, fichier);
                 }
+
+		paquetEnv = cree_paquet(0,ACK,0,paquetRecv.numSeq,0,0,NULL);
                 envoie_paquet(socket,(struct sockaddr*)client,&paquetEnv);
         }
 
@@ -174,31 +193,40 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
 
 void go_back_n_ecoute(int socket,struct sockaddr_in* client,uint16_t premierNumSeq)
 {
+	//Precondition
         if (client == NULL)
         {
                 fprintf(stderr, "go_back_n_ecoute: client NULL.\n");
                 exit(1);
         }
+
+	uint16_t nextNumSeq = premierNumSeq;
         socklen_t taille = TAILLE_ADRESSE;
         paquet paquetEnv;
         paquet paquetRecv = {0};
+	int fichier = open("onChangeraPlusTard.txt", O_CREAT|O_RDWR|O_TRUNC, 0666);
+	if (fichier == -1)
+		tue_moi("go_back_n_ecoute: open", 1, socket);
 
-        uint16_t nextNumSeq = premierNumSeq;
 
-        while(paquetRecv.type != FIN){
+        while(paquetRecv.type != FIN)
+	{
                 if(recvfrom(socket,&paquetRecv,TAILLE_PAQUET,0,
                             (struct sockaddr*)client,&taille)==-1){
                         tue_moi("stop and wait : recv",1,socket);
                 }
-                affiche_paquet(&paquetRecv);
-                printf("j'avais besoin de %hu\n",nextNumSeq);
+
                 if((nextNumSeq) == paquetRecv.numSeq){
                         nextNumSeq = (nextNumSeq+1);
-                        //todo recupere les données et les traiter
+
+			int len = strlen(paquetRecv.donnees);
+			if (len > TAILLE_DONNEES)
+				len = TAILLE_DONNEES;
+			if (write(fichier, paquetRecv.donnees, len) == -1)
+				tue_moi("go_back_n_ecoute, write", 2, socket, fichier);
                 }
-                paquetEnv = cree_paquet(0,ACK,0,nextNumSeq,0,paquetRecv.ecn,NULL);
-                printf("j'envoie : \n");
-                affiche_paquet(&paquetEnv);
+
+		paquetEnv = cree_paquet(0,ACK,0,nextNumSeq,0,paquetRecv.ecn,NULL);
                 envoie_paquet(socket,(struct sockaddr*)client,&paquetEnv);
         }
         fin_dst(&socket,client,nextNumSeq);
@@ -225,10 +253,12 @@ int main(int argc, char** argv)
         fenetre fen = {0,0,TAILLE_FENETRE_SERVEUR,0};
 	//Misc
 	int mode = 0;
+
 	uint16_t lastSeq = negociation_dst(&sockServeur, &addrClient, &fen, &mode);
-	fprintf(stderr, "Fin negociation.\n");
-	printf("debut go back n\n");
-        go_back_n_ecoute(sockServeur,&addrClient,lastSeq);
+	if (mode == STOP_N_WAIT)
+		stop_and_wait_ecoute(sockServer, &addrClient);
+	else if (mode == GO_BACK_N)
+	        go_back_n_ecoute(sockServeur,&addrClient, lastSeq);
 
         return 0;
 }

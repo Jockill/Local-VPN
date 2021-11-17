@@ -126,40 +126,57 @@ void fin_src(int sockClient,struct sockaddr_in * serveur,uint16_t numSec){
     return;
 }
 
-
 void stop_and_wait(int socket,struct sockaddr_in * sevreur){
-    uint16_t Seq = 0;
+    uint16_t seq = 0;
     int fin = 0;
     paquet paquetEnv;
     paquet paquetRecv = {0};
 
+    int fichier = open("./src/source.c", O_RDONLY);
+    if(fichier == -1)
+        tue_moi("go_back_n: open", 1, socket);
+
     while(!fin){
-        paquetEnv= cree_paquet(0,DATA,Seq,0,0,0,NULL);
-        int ackRecu = 0;
+	int tmp = 0;
+	char buf[TAILLE_DONNEES] = {0};
+
+	tmp = read(fichier,buf,TAILLE_DONNEES);
+	if(tmp ==-1)
+	    tue_moi("go_back_n: read", 2, fichier, socket);
+	//Si il n'y a plus rien a lire
+	if (tmp == 0){
+	    fin = 1;
+	    break;
+	}
+	if (tmp < TAILLE_DONNEES)
+		buf[tmp] = '\0';
+
+        paquetEnv= cree_paquet(0,DATA,seq,0,0,0,buf);
+
+	int ackRecu = 0;
         while(!ackRecu){
-            if(!envoie_paquet(socket,(struct sockaddr*)sevreur,&paquetEnv)){
+            if(!envoie_paquet(socket,(struct sockaddr*)sevreur,&paquetEnv))
                 continue;
-            }
-            if(attend_paquet(socket,(struct sockaddr*)sevreur,&paquetRecv)==0){
+            if(attend_paquet(socket,(struct sockaddr*)sevreur,&paquetRecv)==0)
                 continue;
-            }
-            if(paquetRecv.type == (SYN|ACK)){ //mon ACK du handshake c'est perdu
+	    //Le ACK du handshake est perdu donc on le renvoie
+            if(paquetRecv.type == (SYN|ACK)){
                 paquet finHandShake=cree_paquet(0,ACK,
                                     paquetRecv.numAck+1,
                                     paquetRecv.numSeq+1,0,0,NULL);
                 //on renvoie le ACK;
                 envoie_paquet(socket,(struct sockaddr*)sevreur,&finHandShake);
                 continue;
-            }else if(paquetRecv.type != ACK || paquetRecv.numAck != Seq){
+	    }else if(paquetRecv.type != ACK || paquetRecv.numAck != seq){
                 continue;
             }
             ackRecu = 1;
-            Seq = (Seq+1)%2;
+            seq = (seq+1)%2;
         }
         //mettre une condition d'aret pour fin
         //envoyer des données a un moment
     }
-    fin_src(socket,sevreur,Seq);
+    fin_src(socket,sevreur,seq);
     return;
 }
 
@@ -172,43 +189,49 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
     paquet paquetRecv = {0};
     uint16_t lastNumAckRecv = 0;
     int ackDupilque = 0;
-    int strPos = 0;
 
     int fichier = open("./src/source.c",O_RDONLY);
-    char * buf;
-    if(fichier == -1){
-        perror("fichier");
-        exit(1);
-    }
+    if(fichier == -1)
+	tue_moi("go_back_n: open", 1, socket);
 
     fifo * tampon = cree_fifo();
-    if(!tampon) tue_moi("creation tampon", 1, socket);
+    if(!tampon)
+    	tue_moi("go_back_n: creation tampon", 1, socket);
     fen->tailleCongestion = TAILLE_PAQUET;
 
-    while(!fin){ 
+    while(!fin){
         //taille envoie est récuperé pendant l'handshake depusi la destination
         unsigned int tailleFenetreReel=
                     (fen->tailleCongestion<=fen->tailleEnvoi)?
                     fen->tailleCongestion:fen->tailleEnvoi;
-        
+
         printf("taille fenetre effective : %d\n",tailleFenetreReel);
 
-        for(;PNSU< ((uint16_t) (PNSNA + (uint16_t) (tailleFenetreReel/52)));PNSU++){ // si il reste de la place dans ma fenetre
+	//temps qu'il reste de la place dans ma fenetre
+        for(;PNSU< ((uint16_t) (PNSNA + (uint16_t) (tailleFenetreReel/52)));PNSU++)
+	{
 
-            if(read(fichier,buf,TAILLE_DONNEES-1)==-1){
-                perror("read");
-                exit(1);
-            }
+	    int tmp = 0;
+	    char buf[TAILLE_DONNEES] = {0};
+	    tmp = read(fichier,buf,TAILLE_DONNEES);
+	    if(tmp ==-1)
+                tue_moi("go_back_n: read", 2, fichier, socket);
+	    if (tmp == 0)
+	    {
+		fin = 1;
+		break;
+	    }
+
             paquetEnv = cree_paquet_gbn(0,DATA,PNSU,0,0,0,buf);
 
+
+	    // Si l'envoi à échoué, kill
             if(envoie_paquet(socket,(struct sockaddr*)serveur,paquetEnv)==0){
                 tue_moi("envoie_paquet",1,socket);
+	    // Sinon mettre le paquet dans la file pour permettre un renvoi
             }else if(push_fifo(tampon,paquetEnv) == -1)
                 tue_moi("push fifo",1,socket);
-            //j'envoie un paquet (que je stock quelque part);
         }
-        affiche_fifo(tampon);
-        printf("PNSU : %hu,PNSNA : %hu\n",PNSU,PNSNA);
 
         //on a eu une timeout et il faut renvoyer tous les paquets stocker et divisé tailleCongestion par 2
         if(attend_paquet(socket,(struct sockaddr *)serveur,&paquetRecv)==0){
@@ -217,20 +240,24 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
 
         }else if(paquetRecv.type==ACK){
 
+	    // si le bit ECN est pas 0 la taille de la FC perd 10%
             if(paquetRecv.ecn > 0){
                 fen->tailleCongestion -= (fen->tailleCongestion/10);
-            } // si le bit ECN est pas 0 la taille de la FC perd 10%
+            }
 
-            printf("numéro de ack recu %hu\n",paquetRecv.numAck);
+	    // si on a reçu un acquitement en séquence on augment la taille
+	    //de la fenetre de congestion de TAILLE_PAQUET
             if(paquetRecv.numAck==PNSNA+1){
                 fen->tailleCongestion +=TAILLE_PAQUET;
                 free(pop_fifo(tampon));
                 PNSNA++;
                 continue;
-            } // si on a reçu un acquitement en séquence on rajoute un paquet
+            }
+
+	    // acquiter tous les paquets jusqu'a l'acquis recu - 1
             for(;PNSNA<paquetRecv.numAck;PNSNA++){
                 free(pop_fifo(tampon));
-            } // acquiter tous les paquets 
+            }
 
             if(paquetRecv.numAck == lastNumAckRecv){
                 ackDupilque++;
@@ -238,19 +265,26 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
                 lastNumAckRecv = paquetRecv.numAck;
                 ackDupilque=0;
             }
+	    //si j'ai reçu trois fois le même acquis de suite je fais tailleCongestion = 52
             if(ackDupilque == 3){
-                printf("ack dupiqué\n");
                 envoi_fifo(tampon,socket,serveur);
                 fen->tailleCongestion = TAILLE_PAQUET;
                 ackDupilque=0;
             }
-            //on check le numéro d'acquitement et on valide tous les paquets jusqu'au numAck+1
-            //si le numéro d'acquitement est égale au premier seq stocker alors tailleCongestion++
-            //si j'ai reçu trois fois le même acquis de suite je fais tailleCongestion = 52
-        }
+    	}else if (paquetRecv.type == (SYN|ACK)){
+	    paquet finHandShake=cree_paquet(0,ACK,
+				paquetRecv.numAck+1,
+				paquetRecv.numSeq+1,0,0,NULL);
+	    //on renvoie le ACK;
+	    envoie_paquet(socket,(struct sockaddr*)serveur,&finHandShake);
+	    envoi_fifo(tampon, socket, serveur);
+	}
 
-        if(fen->tailleCongestion<TAILLE_PAQUET) fen->tailleCongestion=TAILLE_PAQUET;
-        //mettre une condition d'arete
+
+        if(fen->tailleCongestion<TAILLE_PAQUET)
+	    fen->tailleCongestion=TAILLE_PAQUET;
+
+	// TODO mettre une condition d'arete
     }
     fin_src(socket,serveur,PNSNA);
 }
@@ -258,26 +292,28 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
 
 int main(int argc, char** argv){
     check_args_src(argc,argv);
+    srand(time(NULL));
 
     int mode = strtol(argv[1],NULL,0);
     fenetre fen;
     fen.debut = fen.fin = 0;
     struct sockaddr_in serveur, client;
-
-    srand(time(NULL));
     init_addr(&serveur,argv[2],argv[4]);
     init_addr(&client,NULL,argv[3]);
-    int sockClient = socket(PF_INET,SOCK_DGRAM,0); // socket avec laquelle je reçoit
-    if(sockClient == -1){
+
+    // Socket de reception
+    int sockClient = socket(PF_INET,SOCK_DGRAM,0);
+    if(sockClient == -1)
         tue_moi("socket",1,sockClient);
-    }
-    if(bind(sockClient,(struct sockaddr *)&client,sizeof(client))==-1){
+    if(bind(sockClient,(struct sockaddr *)&client,sizeof(client))==-1)
         tue_moi("bind",0);
-    }
-    
-    uint16_t premierNumSeq = negociation_src(sockClient,&serveur,mode,&fen); //temporaire
-    printf("negociation reussite\n");
-    sleep(2);
-    go_back_n(sockClient,&serveur,&fen,premierNumSeq);
+
+
+    uint16_t premierNumSeq = negociation_src(sockClient,&serveur,mode,&fen);
+    if (mode == GO_BACK_N)
+	    go_back_n(sockClient,&serveur, &fen, premierNumSeq);
+    else if (mode == STOP_N_WAIT)
+    	    stop_and_wait(sockClient, &serveur);
+
     return 0;
 }
