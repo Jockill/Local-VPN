@@ -246,10 +246,7 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
 
         }else if(paquetRecv.type==ACK){
 
-	    // si le bit ECN est pas 0 la taille de la FC perd 10%
-            if(paquetRecv.ecn > 0){
-                fen->tailleCongestion -= (fen->tailleCongestion/10);
-            }
+	// si le bit ECN est pas 0 la taille de la FC perd 10%
 
 	    // si on a reçu un acquitement en séquence on augment la taille
 	    //de la fenetre de congestion de TAILLE_PAQUET
@@ -257,8 +254,14 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
                 fen->tailleCongestion +=TAILLE_PAQUET;
                 free(pop_fifo(tampon));
                 PNSNA++;
+		if(paquetRecv.ecn > 0){
+			fen->tailleCongestion -= (fen->tailleCongestion/10);
+		}
                 continue;
             }
+	    if(paquetRecv.ecn > 0){
+		    fen->tailleCongestion -= (fen->tailleCongestion/10);
+	    }
 
 	    // acquiter tous les paquets jusqu'a l'acquis recu - 1
             for(;PNSNA<paquetRecv.numAck;PNSNA++){

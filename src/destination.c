@@ -225,7 +225,7 @@ void go_back_n_ecoute(int socket,struct sockaddr_in* client,uint16_t premierNumS
 				tue_moi("go_back_n_ecoute, write", 2, socket, fichier);
                 }
 
-		paquetEnv = cree_paquet(0,ACK,0,nextNumSeq,0,paquetRecv.ecn,NULL);
+		paquetEnv = cree_paquet(0,ACK,0,nextNumSeq,paquetRecv.ecn,0,NULL);
                 envoie_paquet(socket,(struct sockaddr*)client,&paquetEnv);
         }
         fin_dst(&socket,client);
