@@ -153,7 +153,7 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
         socklen_t taille = TAILLE_ADRESSE;
         paquet paquetEnv = {0};
         paquet paquetRecv = {0};
-	int fichier = open("onChangeraPlusTard.txt", O_CREAT|O_RDWR|O_TRUNC, 0666);
+	int fichier = open("./transfert/destination.txt", O_CREAT|O_RDWR|O_TRUNC, 0666);
 	if (fichier == -1)
 		tue_moi("stop_and_wait_ecoute: open", 1, socket);
 
@@ -203,7 +203,7 @@ void go_back_n_ecoute(int socket,struct sockaddr_in* client,uint16_t premierNumS
         socklen_t taille = TAILLE_ADRESSE;
         paquet paquetEnv;
         paquet paquetRecv = {0};
-	int fichier = open("onChangeraPlusTard.txt", O_CREAT|O_RDWR|O_TRUNC, 0666);
+	int fichier = open("./transfert/destination.txt", O_CREAT|O_RDWR|O_TRUNC, 0666);
 	if (fichier == -1)
 		tue_moi("go_back_n_ecoute: open", 1, socket);
 

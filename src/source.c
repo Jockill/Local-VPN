@@ -42,9 +42,9 @@ int check_args_src(int argc, char** argv){
     if (mode == GO_BACK_N || mode == STOP_N_WAIT)
     	return mode;
 
-    if (strncmp(argv[1], "stop-wait", 10) == 0)
+    if (strncmp(argv[1], "stop-wait", 9) == 0)
     	return STOP_N_WAIT;
-    if (strncmp(argv[1], "go-back-n", 10) == 0)
+    if (strncmp(argv[1], "go-back-n", 9) == 0)
     	return GO_BACK_N;
 
     fprintf(stderr,"Erreur : mode non valide.\n");
@@ -137,7 +137,7 @@ void stop_and_wait(int socket,struct sockaddr_in * sevreur){
     paquet paquetEnv;
     paquet paquetRecv = {0};
 
-    int fichier = open("./src/source.c", O_RDONLY);
+    int fichier = open("./transfert/source.txt", O_RDONLY);
     if(fichier == -1)
         tue_moi("go_back_n: open", 1, socket);
 
@@ -196,7 +196,7 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
     /* CONTROLE DU TEMPS*/
     clock_t temps = clock();
 
-    int fichier = open("./src/source.c",O_RDONLY);
+    int fichier = open("./transfert/source.txt",O_RDONLY);
     if(fichier == -1)
 	tue_moi("go_back_n: open", 1, socket);
 
@@ -206,12 +206,12 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
     fen->tailleCongestion = TAILLE_PAQUET;
 
     while(!fin){
-        //taille envoie est récuperé pendant l'handshake depusi la destination
+        //taille envoie est récuperé pendant l'handshake depuis la destination
         unsigned int tailleFenetreReel=
                     (fen->tailleCongestion<=fen->tailleEnvoi)?
                     fen->tailleCongestion:fen->tailleEnvoi;
 
-	fprintf(stderr, "%ld %d\n", clock()-temps, fen->tailleCongestion);
+	fprintf(stderr, "%ld %d\n", clock()-temps, tailleFenetreReel);
 
 	//temps qu'il reste de la place dans ma fenetre
         for(;PNSU< ((uint16_t) (PNSNA + (uint16_t) (tailleFenetreReel/52)));PNSU++)
@@ -278,7 +278,7 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
             if(ackDupilque == 3){
                 envoi_fifo(tampon,socket,serveur);
                 fen->tailleCongestion = TAILLE_PAQUET;
-                ackDupilque=0;
+                // ackDupilque=0;
             }
     	}else if (paquetRecv.type == (SYN|ACK)){
 	    paquet finHandShake=cree_paquet(0,ACK,
