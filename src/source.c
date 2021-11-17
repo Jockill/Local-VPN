@@ -1,15 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <arpa/inet.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <string.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <time.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "../head/utils.h"
 #include "../head/fifo.h"
@@ -139,6 +139,7 @@ void stop_and_wait(int socket,struct sockaddr_in * sevreur){
     while(!fin){
 	int tmp = 0;
 	char buf[TAILLE_DONNEES] = {0};
+	int ackRecu = 0;
 
 	tmp = read(fichier,buf,TAILLE_DONNEES);
 	if(tmp ==-1)
@@ -153,10 +154,10 @@ void stop_and_wait(int socket,struct sockaddr_in * sevreur){
 
         paquetEnv= cree_paquet(0,DATA,seq,0,0,0,buf);
 
-	int ackRecu = 0;
         while(!ackRecu){
             if(!envoie_paquet(socket,(struct sockaddr*)sevreur,&paquetEnv))
                 continue;
+
             if(attend_paquet(socket,(struct sockaddr*)sevreur,&paquetRecv)==0)
                 continue;
 	    //Le ACK du handshake est perdu donc on le renvoie
@@ -173,8 +174,6 @@ void stop_and_wait(int socket,struct sockaddr_in * sevreur){
             ackRecu = 1;
             seq = (seq+1)%2;
         }
-        //mettre une condition d'aret pour fin
-        //envoyer des données a un moment
     }
     fin_src(socket,sevreur,seq);
     return;
@@ -189,6 +188,8 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
     paquet paquetRecv = {0};
     uint16_t lastNumAckRecv = 0;
     int ackDupilque = 0;
+    /* CONTROLE DU TEMPS*/
+    clock_t temps = clock();
 
     int fichier = open("./src/source.c",O_RDONLY);
     if(fichier == -1)
@@ -205,7 +206,7 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
                     (fen->tailleCongestion<=fen->tailleEnvoi)?
                     fen->tailleCongestion:fen->tailleEnvoi;
 
-        printf("taille fenetre effective : %d\n",tailleFenetreReel);
+	fprintf(stderr, "%ld %d\n", clock()-temps, fen->tailleCongestion);
 
 	//temps qu'il reste de la place dans ma fenetre
         for(;PNSU< ((uint16_t) (PNSNA + (uint16_t) (tailleFenetreReel/52)));PNSU++)

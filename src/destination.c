@@ -98,8 +98,7 @@ uint16_t negociation_dst(int* sockServer,
         return paquetRecv.numSeq;
 }
 
-void fin_dst(int* sockClient, struct sockaddr_in* addrClient,
-	     uint16_t lastSeq)
+void fin_dst(int* sockClient, struct sockaddr_in* addrClient)
 {
 	//Preconditions
 	if ((sockClient == NULL) || (*sockClient < 0))
@@ -187,7 +186,7 @@ void stop_and_wait_ecoute(int socket,struct sockaddr_in* client)
 
         //TODO Reconstituer les flux
 
-        fin_dst(&socket,client,lastNumSeq);
+        fin_dst(&socket,client);
         return;
 }
 
@@ -229,7 +228,7 @@ void go_back_n_ecoute(int socket,struct sockaddr_in* client,uint16_t premierNumS
 		paquetEnv = cree_paquet(0,ACK,0,nextNumSeq,0,paquetRecv.ecn,NULL);
                 envoie_paquet(socket,(struct sockaddr*)client,&paquetEnv);
         }
-        fin_dst(&socket,client,nextNumSeq);
+        fin_dst(&socket,client);
 }
 
 int main(int argc, char** argv)
@@ -256,7 +255,7 @@ int main(int argc, char** argv)
 
 	uint16_t lastSeq = negociation_dst(&sockServeur, &addrClient, &fen, &mode);
 	if (mode == STOP_N_WAIT)
-		stop_and_wait_ecoute(sockServer, &addrClient);
+		stop_and_wait_ecoute(sockServeur, &addrClient);
 	else if (mode == GO_BACK_N)
 	        go_back_n_ecoute(sockServeur,&addrClient, lastSeq);
 
