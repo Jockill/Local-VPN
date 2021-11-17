@@ -300,10 +300,10 @@ void go_back_n(int socket, struct sockaddr_in * serveur, fenetre *fen,uint16_t p
 
 
 int main(int argc, char** argv){
-    check_args_src(argc,argv);
+    
     srand(time(NULL));
 
-    int mode = strtol(argv[1],NULL,0);
+    int mode = check_args_src(argc,argv);
     fenetre fen;
     fen.debut = fen.fin = 0;
     struct sockaddr_in serveur, client;
